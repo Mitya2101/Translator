@@ -1,59 +1,95 @@
-<Program>::=<Array><Program>|<CreateVariable><Program>|<Expr><Program>
-|<If><Program>|<While><Program>|<CreateFunction><Program>
-<ProgramNoCreateFunction>::=<Array><Program>|<CreateVariable><Program>|<Expr><Program>
-|<If><Program>|<While><Program>
+<Start> ::= <Program>
 
+<Program> ::= { <Statement> }
 
-<String>::={[a-z]|[A-Z]}
-<Value>::={[0-9]}
+<ProgramNoCreateFunction> ::= { <StatementNoCreationFunction> }
 
-//Expression grammatic
-<Expr>::=<Expr1>{","<Expr1>}
-<Expr1>::=<Expr2>|{<CreateOrNotVariable>"="<Expr2>}
-<Expr2>::=<Expr3>{"||"<Expr3>}
-<Expr3>::=<Expr4>{"&&"<Expr4>}
-<Expr4>::=<Expr5>{("=="|"!=")<Expr5>}
-<Expr5>::=<Expr6>{(">"|"<"|"<="|">=")<Expr6>}
-<Expr6>::=<Expr7>{("+"|"-")<Expr7>}
-<Expr7>::=<Expr8>{("*"|"/"|"%")<Expr8>}
-<Expr8>::=<Expr9>{<Function>"("<Expr9>")"|<Variable>"["<Expr9>"]"}
-<Expr9>::=[+|-]<ValueOrVariable>|"("<Expr>")"
+<Statement> ::=
+      <Expr> ";"
+    | <CreateFunctionOrVariableOrArray>
+    | <If>
+    | <While>
+    | <For>
+    | <Return> ";"
+    | <Break> ";"
+    | <Continue> ";"
 
-//VariableGrammatic
-<CreateOrNotVariable>::=<Variable>|<Type><Variable>
-<Variable>::=<String>
-<Function>::=<Variable>
-<ValueOrVariable>::=<Value>|<Variable>
-<CreateVariable>::=<Type><Variable>
+<StatementNoCreationFunction> ::=
+      <Expr> ";"
+    | <CreateVariableOrArray> ";"
+    | <If>
+    | <While>
+    | <For>
+    | <Return> ";"
+    | <Break> ";"
+    | <Continue> ";"
 
-<Type>::=int|double|bool|char
+<Return> ::= "return" [<Expr>]
+<Break> ::= "break"
+<Continue> ::= "continue"
 
+<String> ::= <letter> {<letter>}
+<StringWithDigit> ::= {<letter> | <digit>}
 
-//Need ;?
-<Array>::=<CreateVariable>"["<Value>"]";""
+<Variable> ::= <letter> {<letter> | <digit>}
 
+<letter> ::= /[a-zA-Z]/
 
+<digit> ::= /[0-9]/
 
-<If>::=if"("<Expr>")""{"<ProgramNoCreateFunction>"}"<ElseOrElseIf>
-<ElseOrElseIf>::=else"{"<ProgramNoCreateFunction>"}"|epsilon|else if<ElseIf>
-<ElseIf>::="("<Expr>")""{"<ProgramNoCreateFunction>"}"<ElseOrElseIf>
+<Value> ::= <digit> { <digit> }
 
+<DoubleValue> ::= <Value> [ "." <Value> ]
 
-//While
-<While>::=while "(" <Expr> ")" "{" <ProgramNoCreateFunction "}"
+<Type> ::= "int" | "bool" | "char" | "double"
 
-//For
-<For>::=for"("(<Expr>|epsilon);(<Expr>|epsilon);(<Expr>|epsilon)")"
-"{"<ProgramNoCreateFunction>"}"
+<CreateVariableOrArray> ::= <Type> <Variable> ("=" <Expr> | "[" Expr "]")
 
+<CreateFunctionOrVariableOrArray> ::= <Type> <Variable> 
+( "(" <ArgListType> ")" "{" <ProgramNoCreateFunction> "}"  
+| "=" <Expr> ";" | "[" Expr "]" ";");
 
-//Function
-<Parametr>::=<CreateVariable>
-<Parametrs>::=<Parametr>,<Parametrs>|<Parametr>
-<CreateFunction>::=<CreateVariable>"("(epsilon|<Parametrs>)")"
-"{"<ProgramNoCreateFunction>"}"
+<If> ::=
+    "if" "(" <Expr> ")" "{" <ProgramNoCreateFunction> "}"
+    [ "else" ( <If> | <Else> ) ]
+<Else> ::= "{" <ProgramNoCreateFunction> "}"
 
+<While> ::= "while" "(" <Expr> ")" "{" <ProgramNoCreateFunction> "}"
 
+<For> ::=
+    "for" "("
+      [ <CreateVariableOrArray> | <Expr> ] ";" 
+      [ <Expr> ] ";" 
+      [ <Expr> ]
+    ")" "{" <ProgramNoCreateFunction> "}"
 
+<Expr> ::= <ExprComma>
 
+<ExprComma> ::= <ExprAssign> { "," <ExprAssign> }
 
+<ExprAssign> ::= <ExprLogicOr> { "=" <ExprAssign> }
+
+<ExprLogicOr> ::= <ExprLogicAnd> { "||" <ExprLogicAnd> }
+
+<ExprLogicAnd> ::= <ExprEquality> { "&&" <ExprEquality> }
+
+<ExprEquality> ::= <ExprRel> { ( "==" | "!=" ) <ExprRel> }
+
+<ExprRel> ::= <ExprAdd> { ( ">" | "<" | ">=" | "<=" ) <ExprAdd> }
+
+<ExprAdd> ::= <ExprMul> { ( "+" | "-" ) <ExprMul> }
+
+<ExprMul> ::= <ExprPostfix> { ( "*" | "/" | "%" ) <ExprPostfix> }
+
+<ExprPostfix> ::= <ExprUnary> { "(" [<ArgList>] ")" | "[" <Expr> "]" }
+
+<ExprUnary> ::= ["+" | "-" | "!"] <ExprPrimary>
+
+<ExprPrimary> ::=
+    "'" <StringWithDigit> "'"
+    |  <Variable>
+    | <DoubleValue>
+    | "(" <Expr> ")"
+
+<ArgList> ::= <ExprComma> { "," <ExprComma> }
+<ArgListType> ::= <Type> <Variable> { "," <Type> <Variable> }

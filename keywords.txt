@@ -3,8 +3,6 @@ char
 bool
 float
 void
-class
-constructor
 main
 if
 elif

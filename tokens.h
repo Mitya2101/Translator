@@ -21,8 +21,6 @@ struct Token {
         KwBool,
         KwFloat,
         KwVoid,
-        KwClass,
-        KwConstructor,
         KwMain,
         KwIf,
         KwElif,

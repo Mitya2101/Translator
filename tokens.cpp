@@ -15,8 +15,6 @@ std::string Token::typeToString() const {
         case T::KwBool:          return "KwBool";
         case T::KwFloat:         return "KwFloat";
         case T::KwVoid:          return "KwVoid";
-        case T::KwClass:         return "KwClass";
-        case T::KwConstructor:   return "KwConstructor";
         case T::KwMain:          return "KwMain";
         case T::KwIf:            return "KwIf";
         case T::KwElif:          return "KwElif";

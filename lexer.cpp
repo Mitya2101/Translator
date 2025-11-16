@@ -140,7 +140,7 @@ Token Lexer::next() {
     else if (ch == '\'') {
         activeToken = scanCharLiteral();
     }
-    else if (ch == '"') {
+    else if (ch == '\"') {
         activeToken = scanStringLiteral();
     }
     else {
@@ -191,8 +191,6 @@ Token Lexer::scanWordOrKeyword() {
         if (buf == "float")       return make(T::KwFloat, buf, tokLine, tokCol);
         if (buf == "void")        return make(T::KwVoid, buf, tokLine, tokCol);
 
-        if (buf == "class")       return make(T::KwClass, buf, tokLine, tokCol);
-        if (buf == "constructor") return make(T::KwConstructor, buf, tokLine, tokCol);
         if (buf == "main")        return make(T::KwMain, buf, tokLine, tokCol);
 
         if (buf == "if")          return make(T::KwIf, buf, tokLine, tokCol);
@@ -285,7 +283,7 @@ Token Lexer::scanStringLiteral() {
                 case 't':  str += '\t'; break;
                 case 'r':  str += '\r'; break;
                 case '\\': str += '\\'; break;
-                case '"':  str += '"'; break;
+                case '\"':  str += '\"'; break;
                 default:   str += ch;   break;
             }
             escaped = false;
@@ -293,7 +291,7 @@ Token Lexer::scanStringLiteral() {
         else if (ch == '\\') {
             escaped = true;
         }
-        else if (ch == '"') {
+        else if (ch == '\"') {
             readChar();
             return make(Token::Type::StringLiteral, str, tokLine, tokCol);
         }

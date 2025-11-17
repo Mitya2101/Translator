@@ -43,7 +43,7 @@
 
 <Type> ::= "int" | "bool" | "char" | "double"
 
-<CreateVariableOrArray> ::= <Type> <Variable> ("=" <Expr> | "[" Expr "]")
+<CreateVariableOrArray> ::= <Type> <Variable> ("=" <Expr> | ("[" Expr "]", { "[" Expr "]" }))
 
 <CreateFunctionOrVariableOrArray> ::= <Type> <Variable> 
 ( "(" <ArgListType> ")" "{" <ProgramNoCreateFunction> "}"  

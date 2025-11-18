@@ -47,7 +47,7 @@
 
 <CreateFunctionOrVariableOrArray> ::= <Type> <Variable> 
 ( "(" <ArgListType> ")" "{" <ProgramNoCreateFunction> "}"  
-| "=" <Expr> ";" | "[" Expr "]" ";");
+| "=" <Expr> ";" | ("[" Expr "]", { "[" Expr "]" }) ";");
 
 <If> ::=
     "if" "(" <Expr> ")" "{" <ProgramNoCreateFunction> "}"
@@ -81,7 +81,7 @@
 
 <ExprMul> ::= <ExprPostfix> { ( "*" | "/" | "%" ) <ExprPostfix> }
 
-<ExprPostfix> ::= <ExprUnary> { "(" [<ArgList>] ")" | "[" <Expr> "]" }
+<ExprPostfix> ::= <ExprUnary> ("(" [<ArgList>] ")" | {"[" <Expr> "]"} | )
 
 <ExprUnary> ::= ["+" | "-" | "!"] <ExprPrimary>
 
@@ -91,5 +91,5 @@
     | <DoubleValue>
     | "(" <Expr> ")"
 
-<ArgList> ::= <ExprComma> { "," <ExprComma> }
+<ArgList> ::= <ExprAssign> { "," <ExprAssign> }
 <ArgListType> ::= <Type> <Variable> { "," <Type> <Variable> }

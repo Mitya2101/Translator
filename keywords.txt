@@ -1,0 +1,14 @@
+int
+char
+bool
+double
+void
+if
+else
+while
+for
+return
+break
+continue
+print
+read

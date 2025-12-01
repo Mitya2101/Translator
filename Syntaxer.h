@@ -3,14 +3,54 @@
 
 class SyntaxerNode{
 public:
-    SyntaxerNode(Token cur);
     Token GiveToken();
+    void AddChildren(SyntaxerNode* now);
+    void UpdateType(Token::Type a);
+    void UpdateLexeme(std::string now);
     std::vector<SyntaxerNode*> GiveChildrens();
 private:
     Token cur_;
     std::vector<SyntaxerNode*> childrens_;
 };
 
+enum NotTerminal{
+    Start,
+    Program,
+    ProgramNoCreateFunction,
+    Statement,
+    StatementNoCreationFunction,
+    Return,
+    Break,
+    Continue,
+    String,
+    StringWithDigit,
+    Variable,
+    letter,
+    digit,
+    Value,
+    DoubleValue,
+    Type,
+    CreateVariableOrArray,
+    CreateFunctionOrVariableOrArray,
+    If,
+    Else,
+    While,
+    For,
+    Expr,
+    ExprComma,
+    ExprAssign,
+    ExprLogicOr,
+    ExprLogicAnd,
+    ExprEquality,
+    ExprRel,
+    ExprAdd,
+    ExprMul,
+    ExprPostfix,
+    ExprUnary,
+    ExprPrimary,
+    ArgList,
+    ArgListType
+};
 
 class Syntaxer{
 public:

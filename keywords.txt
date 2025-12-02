@@ -1,9 +1,13 @@
 int
 char
 bool
-double
+float
 void
+class
+constructor
+main
 if
+elif
 else
 while
 for
@@ -12,3 +16,5 @@ break
 continue
 print
 read
+true
+false

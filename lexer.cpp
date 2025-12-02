@@ -188,13 +188,13 @@ Token Lexer::scanWordOrKeyword() {
         if (buf == "int")         return make(T::KwInt, buf, tokLine, tokCol);
         if (buf == "char")        return make(T::KwChar, buf, tokLine, tokCol);
         if (buf == "bool")        return make(T::KwBool, buf, tokLine, tokCol);
-        if (buf == "double")       return make(T::KwFloat, buf, tokLine, tokCol);
+        if (buf == "float")       return make(T::KwFloat, buf, tokLine, tokCol);
         if (buf == "void")        return make(T::KwVoid, buf, tokLine, tokCol);
 
-       // if (buf == "main")        return make(T::KwMain, buf, tokLine, tokCol);
+        if (buf == "main")        return make(T::KwMain, buf, tokLine, tokCol);
 
         if (buf == "if")          return make(T::KwIf, buf, tokLine, tokCol);
-      //  if (buf == "elif")        return make(T::KwElif, buf, tokLine, tokCol);
+        if (buf == "elif")        return make(T::KwElif, buf, tokLine, tokCol);
         if (buf == "else")        return make(T::KwElse, buf, tokLine, tokCol);
         if (buf == "while")       return make(T::KwWhile, buf, tokLine, tokCol);
         if (buf == "for")         return make(T::KwFor, buf, tokLine, tokCol);
@@ -205,8 +205,8 @@ Token Lexer::scanWordOrKeyword() {
         if (buf == "print")       return make(T::KwPrint, buf, tokLine, tokCol);
         if (buf == "read")        return make(T::KwRead, buf, tokLine, tokCol);
 
-        // if (buf == "true")        return make(T::KwTrue, buf, tokLine, tokCol);
-        // if (buf == "false")       return make(T::KwFalse, buf, tokLine, tokCol);
+        if (buf == "true")        return make(T::KwTrue, buf, tokLine, tokCol);
+        if (buf == "false")       return make(T::KwFalse, buf, tokLine, tokCol);
     }
 
     return make(Token::Type::Identifier, buf, tokLine, tokCol);
@@ -315,64 +315,55 @@ Token Lexer::scanOperator() {
 
     char first = ch;
     char lookahead = input.peek();
-    std::string two(1, first);
-    two.push_back(lookahead);
+    std::string two;
+    two += first;
+    two += lookahead;
 
     using T = Token::Type;
 
-    auto tryTwo = [&](const char* s, T type) -> bool {
+    auto makeOp2 = [&](const char* s) -> bool {
         if (two == s) {
             readChar();
             readChar();
-            activeToken = make(type, s, tokLine, tokCol);
+            activeToken = make(T::Operator, s, tokLine, tokCol);
             return true;
         }
         return false;
     };
 
     if (!reachedEOF) {
-        if (tryTwo("==", T::EqualEqual)) return activeToken;
-        if (tryTwo("!=", T::NotEqual))   return activeToken;
-        if (tryTwo("<=", T::LessEqual))  return activeToken;
-        if (tryTwo(">=", T::GreaterEqual))return activeToken;
-        // if (tryTwo("++", T::PlusPlus))   return activeToken;
-        // if (tryTwo("--", T::MinusMinus)) return activeToken;
-        if (tryTwo("&&", T::AmpAmp))     return activeToken;
-        if (tryTwo("||", T::PipePipe))   return activeToken;
-        // if (tryTwo("<<", T::Shl))        return activeToken;
-        // if (tryTwo(">>", T::Shr))        return activeToken;
+        if (makeOp2("==")) return activeToken;
+        if (makeOp2("!=")) return activeToken;
+        if (makeOp2("<=")) return activeToken;
+        if (makeOp2(">=")) return activeToken;
+        if (makeOp2("++")) return activeToken;
+        if (makeOp2("--")) return activeToken;
+        if (makeOp2("&&")) return activeToken;
+        if (makeOp2("||")) return activeToken;
+        if (makeOp2("<<")) return activeToken;
+        if (makeOp2(">>")) return activeToken;
     }
 
     readChar();
 
-    switch (first) {
-        case '(': return make(T::LParen, "(", tokLine, tokCol);
-        case ')': return make(T::RParen, ")", tokLine, tokCol);
-        case '{': return make(T::LBrace, "{", tokLine, tokCol);
-        case '}': return make(T::RBrace, "}", tokLine, tokCol);
-        case '[': return make(T::LBracket, "[", tokLine, tokCol);
-        case ']': return make(T::RBracket, "]", tokLine, tokCol);
-        case ',': return make(T::Comma, ",", tokLine, tokCol);
-        case ';': return make(T::Semicolon, ";", tokLine, tokCol);
-        case '.': return make(T::Dot, ".", tokLine, tokCol);
-        // case '`': return make(T::Backtick, "`", tokLine, tokCol);
-        case '+': return make(T::Plus, "+", tokLine, tokCol);
-        case '-': return make(T::Minus, "-", tokLine, tokCol);
-        case '*': return make(T::Asterisk, "*", tokLine, tokCol);
-        case '/': return make(T::Slash, "/", tokLine, tokCol);
-        case '%': return make(T::Percent, "%", tokLine, tokCol);
-        // case '&': return make(T::Ampersand, "&", tokLine, tokCol);
-        // case '|': return make(T::VerticalBar, "|", tokLine, tokCol);
-        // case '^': return make(T::Caret, "^", tokLine, tokCol);
-        case '!': return make(T::Exclamation, "!", tokLine, tokCol);
-        // case '~': return make(T::Tilde, "~", tokLine, tokCol);
-        case '=': return make(T::Assign, "=", tokLine, tokCol);
-        case '<': return make(T::Less, "<", tokLine, tokCol);
-        case '>': return make(T::Greater, ">", tokLine, tokCol);
-        default:
-            std::cerr << "Неизвестный символ '" << first
-                      << "' в позиции " << tokLine << ":" << tokCol << "\n";
-            return make(T::Identifier, std::string(1, first),
-                        tokLine, tokCol);
-    }
+    std::string lex(1, first);
+
+    if (first == '(' || first == '[' || first == '{')
+        return make(T::OpenBracket, lex, tokLine, tokCol);
+
+    if (first == ')' || first == ']' || first == '}')
+        return make(T::CloseBracket, lex, tokLine, tokCol);
+
+    if (first == ',' || first == ';' || first == '.' || first == '`')
+        return make(T::Separator, lex, tokLine, tokCol);
+
+    if (first == '+' || first == '-' || first == '*' || first == '/' ||
+        first == '%' || first == '&' || first == '|' || first == '^' ||
+        first == '!' || first == '~' || first == '=' || first == '<' ||
+        first == '>')
+        return make(T::Operator, lex, tokLine, tokCol);
+
+    std::cerr << "Неизвестный символ '" << first
+              << "' в позиции " << tokLine << ":" << tokCol << "\n";
+    return make(T::Identifier, lex, tokLine, tokCol);
 }

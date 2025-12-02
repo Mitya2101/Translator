@@ -3,7 +3,7 @@
 #include "tokens.h"
 
 int main() {
-    Lexer lexer("test.txt", "keywords.txt");
+    Lexer lexer("C:\\codes\\Lexer\\test.txt", "C:\\codes\\Lexer\\keywords.txt");
 
     while (true) {
         const Token& tok = lexer.currentToken();

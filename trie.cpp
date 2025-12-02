@@ -16,6 +16,7 @@ void Trie::clear(TrieNode* node) {
         return;
     }
 
+    // Сначала удаляем всех потомков, затем сам узел.
     for (auto& entry : node->children) {
         clear(entry.second);
     }

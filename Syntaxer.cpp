@@ -204,3 +204,66 @@ SyntaxerNode* Syntaxer::Variable(){
     lexer.next();
     return now;
 }
+
+SyntaxerNode* Syntaxer::Value(){
+    SyntaxerNode* now = new SyntaxerNode();
+    if(lexer.currentToken().type != Token::Type::IntegerLiteral){
+        throw BuildError({"number"},lexer.currentToken());
+    }
+    lexer.next();
+
+    // now->UpdateLexeme();
+    // now->UpdateType()
+
+    return now;
+}
+
+SyntaxerNode* Syntaxer::DoubleValue(){
+    SyntaxerNode* now = new SyntaxerNode();
+    if(lexer.currentToken().type != Token::Type::IntegerLiteral ||
+    lexer.currentToken().type != Token::Type::FloatLiteral){
+        throw BuildError({"number","double number"},lexer.currentToken());
+    }
+    // now->UpdateLexeme();
+    // now->UpdateType();
+    lexer.next();
+    return now;
+}
+
+
+SyntaxerNode* Syntaxer::Expr(){
+    SyntaxerNode* tmp = ExprAssign();
+
+    while(lexer.currentToken().lexeme == ","){
+        lexer.next();
+        SyntaxerNode* cur = ExprAssign();
+        SyntaxerNode* tmp1 = new SyntaxerNode();
+
+        // tmp1->UpdateLexeme();
+        // tmp1->UpdateType();
+        
+        tmp1->AddChildren(tmp);
+        tmp1->AddChildren(cur);
+        tmp = tmp1;
+    }
+    return tmp;
+}
+
+SyntaxerNode* Syntaxer::ExprAssign(){
+    SyntaxerNode* tmp = ExprLogicOr();
+
+    while(lexer.currentToken().lexeme == ","){
+        lexer.next();
+        SyntaxerNode* cur = ExprAssign();
+        SyntaxerNode* tmp1 = new SyntaxerNode();
+
+        // tmp1->UpdateLexeme();
+        // tmp1->UpdateType();
+        
+        tmp1->AddChildren(tmp);
+        tmp1->AddChildren(cur);
+        tmp = tmp1;
+    }
+    return tmp;
+}
+

@@ -78,7 +78,7 @@ private:
     SyntaxerNode* CreateVariableOrArray();
     SyntaxerNode* CreateFunctionOrVariableOrArray();
     SyntaxerNode* Expr();
-    SyntaxerNode* ExprComma();
+    // SyntaxerNode* ExprComma();
     SyntaxerNode* ExprAssign();
     SyntaxerNode* ExprLogicOr();
     SyntaxerNode* ExprLogicAnd();
@@ -91,6 +91,4 @@ private:
     SyntaxerNode* ExprPrimary();
     SyntaxerNode* ArgList();
     SyntaxerNode* ArgListType();
-    SyntaxerNode* letter();
-    SyntaxerNode* digit();
 };

@@ -86,7 +86,7 @@
 <ExprUnary> ::= ["+" | "-" | "!"] <ExprPrimary>
 
 <ExprPrimary> ::=
-    "'" <StringWithDigit> "'"
+     <StringWithDigit> 
     |  <Variable>
     | <DoubleValue>
     | "(" <Expr> ")"

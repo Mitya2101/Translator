@@ -70,7 +70,6 @@ private:
     SyntaxerNode* Return();
     SyntaxerNode* Break();
     SyntaxerNode* Continue();
-    SyntaxerNode* String();
     SyntaxerNode* StringWithDigit();
     SyntaxerNode* Variable();
     SyntaxerNode* Value();

@@ -141,3 +141,66 @@ SyntaxerNode* Syntaxer::Continue(){
 }
 
 
+SyntaxerNode* Syntaxer::While(){
+    if(lexer.currentToken().lexeme != "while"){
+        throw BuildError({"while"},lexer.currentToken());
+    }
+    lexer.next();
+    if(lexer.currentToken().lexeme != "("){
+        throw BuildError({"("},lexer.currentToken());
+    }
+    lexer.next();
+    SyntaxerNode* now = new SyntaxerNode();
+    now->AddChildren(Expr());
+    if(lexer.currentToken().lexeme != ")"){
+        throw BuildError({")"},lexer.currentToken());
+    }
+    lexer.next();
+
+    if(lexer.currentToken().lexeme != "{"){
+        throw BuildError({"{"},lexer.currentToken());
+    }
+    lexer.next();
+    now->AddChildren(ProgramNoCreateFunction());
+    if(lexer.currentToken().lexeme != "}"){
+        throw BuildError({"}"},lexer.currentToken());
+    }
+    lexer.next();
+    
+    // now->UpdateLexeme()
+    // now->UpdateType()
+    return now;
+}
+
+
+
+SyntaxerNode* Syntaxer::StringWithDigit(){
+    
+
+}
+
+
+SyntaxerNode* Syntaxer::Type(){
+    if(lexer.currentToken().lexeme != "int" && 
+    lexer.currentToken().lexeme != "double" && 
+    lexer.currentToken().lexeme != "char" && 
+    lexer.currentToken().lexeme != "bool"){
+        throw BuildError({"int","bool","char","double"},lexer.currentToken());
+    }
+    SyntaxerNode* now = new SyntaxerNode();
+    // now->UpdateLexeme();
+    // now->UpdateType()
+    lexer.next();
+    return now;
+}
+
+SyntaxerNode* Syntaxer::Variable(){
+    SyntaxerNode* now = new SyntaxerNode();
+    if(lexer.currentToken().type == Token::Type::EndOfFile){
+        throw BuildError({"digit","letter"},lexer.currentToken());
+    }   
+    // now->UpdateLexeme();
+    // now->UpdateType()
+    lexer.next();
+    return now;
+}

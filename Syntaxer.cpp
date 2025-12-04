@@ -5,6 +5,27 @@ std::vector<SyntaxerNode*> SyntaxerNode::GiveChildrens(){
     return childrens_;
 }
 
+Token SyntaxerNode::GiveToken(){
+    return cur_;
+}
+
+void SyntaxerNode::AddChildren(SyntaxerNode* now){
+    childrens_.push_back(now);
+}
+
+void SyntaxerNode::UpdateLexeme(std::string now){
+    cur_.lexeme = now;
+}
+
+void SyntaxerNode::UpdateType(Token::Type a){
+    cur_.type = a;
+}
+
+void SyntaxerNode::UpdatePos(Position a){
+    cur_.pos = a;
+}
+
+
 Syntaxer::Syntaxer(const std::string& sourceName):lexer(sourceName){};
 
 
@@ -29,6 +50,7 @@ SyntaxerNode* Syntaxer::If(){
     SyntaxerNode* if_node = new SyntaxerNode();
     if_node->UpdateLexeme(lexer.currentToken().lexeme);
     if_node->UpdateType(lexer.currentToken().type);
+    if_node->UpdatePos(lexer.currentToken().pos);
 
     if(lexer.currentToken().lexeme != "if"){
         throw BuildError({"if"},lexer.currentToken());
@@ -65,14 +87,14 @@ SyntaxerNode* Syntaxer::If(){
    
 
     if(lexer.currentToken().lexeme == "else"){
+        Position now = lexer.currentToken().pos;
         lexer.next();
         if(lexer.currentToken().lexeme == "if"){
-            lexer.next();
             SyntaxerNode* if_node_1 = If();
             if_node->AddChildren(if_node_1);
         }else if(lexer.currentToken().lexeme == "{"){
-            lexer.next();
             SyntaxerNode* end_node = Else();
+            end_node->UpdatePos(now);
             if_node->AddChildren(end_node);
         }else{
             throw BuildError({"if","{"},lexer.currentToken());
@@ -90,6 +112,7 @@ SyntaxerNode* Syntaxer::Else(){
     SyntaxerNode* else_node = new SyntaxerNode();
     else_node->UpdateLexeme("else");
     else_node->UpdateType(Token::Type::KwElse);
+    else_node->UpdatePos(lexer.currentToken().pos);
     lexer.next();
 
     else_node->AddChildren(ProgramNoCreateFunction());
@@ -107,10 +130,14 @@ SyntaxerNode* Syntaxer::Return(){
         throw BuildError({"return"},lexer.currentToken());
     }
     SyntaxerNode* return_node = new SyntaxerNode();
-    return_node->AddChildren(Expr());
 
     return_node->UpdateLexeme("return");
     return_node->UpdateType(Token::Type::KwReturn);
+    return_node->UpdatePos(lexer.currentToken().pos);
+
+    return_node->AddChildren(Expr());
+
+ 
 
     lexer.next();
     return return_node;
@@ -124,6 +151,8 @@ SyntaxerNode* Syntaxer::Break(){
 
     break_node->UpdateLexeme("break");
     break_node->UpdateType(Token::Type::KwBreak);
+    break_node->UpdatePos(lexer.currentToken().pos);
+
     lexer.next();
     return break_node;
 }
@@ -136,21 +165,28 @@ SyntaxerNode* Syntaxer::Continue(){
 
     continue_node->UpdateLexeme("continue");
     continue_node->UpdateType(Token::Type::KwContinue);
+    continue_node->UpdatePos(lexer.currentToken().pos);
+
     lexer.next();
     return continue_node;
 }
 
 
 SyntaxerNode* Syntaxer::While(){
+    SyntaxerNode* now = new SyntaxerNode();
+
     if(lexer.currentToken().lexeme != "while"){
         throw BuildError({"while"},lexer.currentToken());
     }
+    now->UpdateLexeme("while");
+    now->UpdateType(Token::Type::KwWhile);
+    now->UpdatePos(lexer.currentToken().pos);
+
     lexer.next();
     if(lexer.currentToken().lexeme != "("){
         throw BuildError({"("},lexer.currentToken());
     }
     lexer.next();
-    SyntaxerNode* now = new SyntaxerNode();
     now->AddChildren(Expr());
     if(lexer.currentToken().lexeme != ")"){
         throw BuildError({")"},lexer.currentToken());
@@ -167,8 +203,7 @@ SyntaxerNode* Syntaxer::While(){
     }
     lexer.next();
     
-    now->UpdateLexeme("while");
-    now->UpdateType(Token::Type::KwWhile);
+    
     return now;
 }
 
@@ -187,6 +222,7 @@ SyntaxerNode* Syntaxer::Type(){
     SyntaxerNode* now = new SyntaxerNode();
     now->UpdateLexeme(lexer.currentToken().lexeme);
     now->UpdateType(lexer.currentToken().type);
+    now->UpdatePos(lexer.currentToken().pos);
     lexer.next();
     return now;
 }
@@ -198,6 +234,7 @@ SyntaxerNode* Syntaxer::Variable(){
     }   
     now->UpdateLexeme(lexer.currentToken().lexeme);
     now->UpdateType(lexer.currentToken().type);
+    now->UpdatePos(lexer.currentToken().pos);
     lexer.next();
     return now;
 }
@@ -210,6 +247,7 @@ SyntaxerNode* Syntaxer::Value(){
 
     now->UpdateLexeme(lexer.currentToken().lexeme);
     now->UpdateType(lexer.currentToken().type);
+    now->UpdatePos(lexer.currentToken().pos);
     lexer.next();
 
     return now;
@@ -223,6 +261,7 @@ SyntaxerNode* Syntaxer::DoubleValue(){
     }
     now->UpdateLexeme(lexer.currentToken().lexeme);
     now->UpdateType(lexer.currentToken().type);
+    now->UpdatePos(lexer.currentToken().pos);
     lexer.next();
     return now;
 }
@@ -235,6 +274,7 @@ SyntaxerNode* Syntaxer::Expr(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
         lexer.next();
 
         SyntaxerNode* cur = ExprAssign();
@@ -255,6 +295,7 @@ SyntaxerNode* Syntaxer::ExprAssign(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
 
         lexer.next();
         SyntaxerNode* cur = ExprLogicOr();
@@ -276,6 +317,7 @@ SyntaxerNode* Syntaxer::ExprLogicOr(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
 
         lexer.next();
         SyntaxerNode* cur = ExprLogicAnd();
@@ -295,6 +337,8 @@ SyntaxerNode* Syntaxer::ExprLogicAnd(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
+
 
         lexer.next();
         SyntaxerNode* cur = ExprEquality();
@@ -314,6 +358,8 @@ SyntaxerNode* Syntaxer::ExprEquality(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
+
 
         lexer.next();
         SyntaxerNode* cur = ExprRel();
@@ -336,6 +382,8 @@ SyntaxerNode* Syntaxer::ExprRel(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
+
 
         lexer.next();
         SyntaxerNode* cur = ExprAdd();
@@ -356,6 +404,8 @@ SyntaxerNode* Syntaxer::ExprAdd(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
+
 
         lexer.next();
         SyntaxerNode* cur = ExprMul();
@@ -376,6 +426,8 @@ SyntaxerNode* Syntaxer::ExprMul(){
         SyntaxerNode* tmp1 = new SyntaxerNode();
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
+        tmp1->UpdatePos(lexer.currentToken().pos);
+
 
         lexer.next();
         SyntaxerNode* cur = ExprPostfix();
@@ -414,6 +466,8 @@ SyntaxerNode* Syntaxer::ExprUnary(){
     lexer.currentToken().lexeme == "+"){
         tmp->UpdateLexeme(lexer.currentToken().lexeme);
         tmp->UpdateType(lexer.currentToken().type);
+        tmp->UpdatePos(lexer.currentToken().pos);
+
         lexer.next();
         SyntaxerNode* cur = ExprPrimary();
         tmp->AddChildren(cur);
@@ -442,6 +496,9 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
     }
     tmp->UpdateLexeme(lexer.currentToken().lexeme);
     tmp->UpdateType(lexer.currentToken().type);
+    tmp->UpdatePos(lexer.currentToken().pos);
+
+    lexer.next();
     return tmp;
 }
 

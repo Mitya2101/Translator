@@ -109,13 +109,9 @@ SyntaxerNode* Syntaxer::Else(){
     if(lexer.currentToken().lexeme != "{"){
         throw BuildError({"{"},lexer.currentToken());
     }
-    SyntaxerNode* else_node = new SyntaxerNode();
-    else_node->UpdateLexeme("else");
-    else_node->UpdateType(Token::Type::KwElse);
-    else_node->UpdatePos(lexer.currentToken().pos);
     lexer.next();
 
-    else_node->AddChildren(ProgramNoCreateFunction());
+    SyntaxerNode* else_node = ProgramNoCreateFunction();
 
     if(lexer.currentToken().lexeme != "}"){
         throw BuildError({"}"},lexer.currentToken());
@@ -136,8 +132,6 @@ SyntaxerNode* Syntaxer::Return(){
     return_node->UpdatePos(lexer.currentToken().pos);
 
     return_node->AddChildren(Expr());
-
- 
 
     lexer.next();
     return return_node;
@@ -440,22 +434,7 @@ SyntaxerNode* Syntaxer::ExprMul(){
 }
 
 SyntaxerNode* Syntaxer::ExprPostfix(){
-    SyntaxerNode* tmp = ExprUnary();
-
-    if(lexer.currentToken().lexeme == "("){
-        while(lexer.currentToken().lexeme != ")"){
-            tmp->AddChildren(ExprAssign());
-            if(lexer.currentToken().lexeme == ")"){
-                break;
-            }
-            if(lexer.currentToken().lexeme != ","){
-                throw BuildError({",",")"},lexer.currentToken());
-            }
-            lexer.next();
-        }
-        return tmp;
-    }
-    //вызов функции или обращение к массиву?
+    return ExprUnary();
 }
 
 
@@ -488,17 +467,45 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
         lexer.next();
         return cur;
     }
+
+
     if(lexer.currentToken().type != Token::Type::IntegerLiteral 
     && lexer.currentToken().type != Token::Type::FloatLiteral
     && lexer.currentToken().type != Token::Type::CharLiteral
     && lexer.currentToken().type != Token::Type::StringLiteral){
         throw BuildError({"(","digit","char"},lexer.currentToken());
     }
+
+
     tmp->UpdateLexeme(lexer.currentToken().lexeme);
     tmp->UpdateType(lexer.currentToken().type);
     tmp->UpdatePos(lexer.currentToken().pos);
 
-    lexer.next();
+    if(lexer.currentToken().type == Token::Type::StringLiteral){
+        lexer.next();
+        if(lexer.currentToken().lexeme == "("){
+            while(lexer.currentToken().lexeme != ")"){
+                tmp->AddChildren(ExprAssign());
+                if(lexer.currentToken().lexeme == ")"){
+                    break;
+                }
+                if(lexer.currentToken().lexeme != ","){
+                    throw BuildError({",",")"},lexer.currentToken());
+                }
+                lexer.next();
+            }
+            return tmp;
+        }
+        while(lexer.currentToken().lexeme == "["){
+            lexer.next();
+            tmp->AddChildren(Expr());
+            if(lexer.currentToken().lexeme != "]"){
+                throw BuildError({"]"},lexer.currentToken());
+            }
+            lexer.next();
+        }
+        return tmp;
+    }
     return tmp;
 }
 

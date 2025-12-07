@@ -1,14 +1,8 @@
 #pragma once
 #include "tokens.h"
-#include<vector>
+#include <vector>
 
 
-enum Types{
-    INT,
-    DOUBLE,
-    CHAR,
-    BOOL
-};
 
 class TIDElement{
 private:

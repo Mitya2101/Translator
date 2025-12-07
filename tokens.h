@@ -8,6 +8,15 @@ struct Position {
     int column = 0;
 };
 
+enum Types{
+    VOID,
+    INT,
+    DOUBLE,
+    CHAR,
+    BOOL
+};
+
+
 struct Token {
     enum class Type {
         Identifier,

@@ -1,9 +1,17 @@
 #include "TID.h"
 
 TIDElement::TIDElement(std::string name,Types cur):
-name_(name),cur_(cur){};
+name_(name),cur_(cur){
+    if(cur_ == Types::VOID){
+        throw "you cannot create var of void type";
+    }
+};
 TIDElement::TIDElement(std::string name,Types cur,std::string num):
-name_(name),cur_(cur),num_(num){};
+name_(name),cur_(cur),num_(num){
+    if(cur_ == Types::VOID){
+        throw "you cannot create var of void type";
+    }
+};
 
 
 bool TIDElement::operator==(TIDElement a){

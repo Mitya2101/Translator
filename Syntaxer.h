@@ -1,5 +1,7 @@
+#pragma once
 
 #include "lexer.h"
+#include "SyntaxerNode.h"
 #include "TFunc.h"
 #include "TID.h"
 
@@ -9,66 +11,73 @@ enum NotTerminal{
     ProgramNoCreateFunction,
     Statement,
     StatementNoCreationFunction,
-    Return,
-    Break,
-    Continue,
-    String,
-    StringWithDigit,
-    Variable,
+    ReturnNt,
+    BreakNt,
+    ContinueNt,
+    StringNt,
+    StringWithDigitNt,
+    VariableNt,
     letter,
     digit,
-    Value,
-    DoubleValue,
-    Type,
-    CreateVariableOrArray,
-    CreateFunctionOrVariableOrArray,
-    If,
-    Else,
-    While,
-    For,
-    Expr,
+    ValueNt,
+    DoubleValueNt,
+    TypeNt,
+    CreateVariableOrArrayNt,
+    CreateFunctionOrVariableOrArrayNt,
+    IfNt,
+    ElseNt,
+    WhileNt,
+    ForNt,
+    ExprNt,
     ExprComma,
-    ExprAssign,
-    ExprLogicOr,
-    ExprLogicAnd,
-    ExprEquality,
-    ExprRel,
-    ExprAdd,
-    ExprMul,
-    ExprPostfix,
-    ExprUnary,
-    ExprPrimary,
-    ArgList,
-    ArgListType
+    ExprAssignNt,
+    ExprLogicOrNt,
+    ExprLogicAndNt,
+    ExprEqualityNt,
+    ExprRelNt,
+    ExprAddNt,
+    ExprMulNt,
+    ExprPostfixNt,
+    ExprUnaryNt,
+    ExprPrimaryNt,
+    ArgListNt,
+    ArgListTypeNt
 };
 
 class Syntaxer{
 public:
-    Lexer lexer;
-    Syntaxer(const std::string& sourceName);
+    explicit Syntaxer(const std::string& sourceName);
 
     SyntaxerNode* Start();
+
+    Lexer lexer;
+
 private:
     SyntaxerNode* Program();
     SyntaxerNode* ProgramNoCreateFunction();
+
     SyntaxerNode* Statement();
     SyntaxerNode* StatementNoCreationFunction();
+
     SyntaxerNode* If();
     SyntaxerNode* Else();
     SyntaxerNode* While();
     SyntaxerNode* For();
+
     SyntaxerNode* Return();
     SyntaxerNode* Break();
     SyntaxerNode* Continue();
+
     SyntaxerNode* StringWithDigit();
     SyntaxerNode* Variable();
     SyntaxerNode* Value();
     SyntaxerNode* DoubleValue();
     SyntaxerNode* Type();
+
     SyntaxerNode* CreateVariableOrArray();
     SyntaxerNode* CreateFunctionOrVariableOrArray();
+
     SyntaxerNode* Expr();
-    // SyntaxerNode* ExprComma();
     SyntaxerNode* ExprAssign();
     SyntaxerNode* ExprLogicOr();
     SyntaxerNode* ExprLogicAnd();
@@ -79,6 +88,7 @@ private:
     SyntaxerNode* ExprPostfix();
     SyntaxerNode* ExprUnary();
     SyntaxerNode* ExprPrimary();
+
     SyntaxerNode* ArgList();
     SyntaxerNode* ArgListType();
 };

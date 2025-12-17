@@ -45,10 +45,8 @@ void TID::CreateVar(TIDElement a){
 }
 
 TIDElement TID::GetVar(std::string name){
-    if(!Find(name)){
-        throw "such var have not exists yet";
-    }
     for(int i = 0;i < all_.size();i++){
         if(all_[i] == name)return all_[i];
     }
+    throw "such var have not exists yet";
 }

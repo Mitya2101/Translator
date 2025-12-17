@@ -1,7 +1,14 @@
+#define _GLIBCXX_DEBUG
 #include "SyntaxerNode.h"
+#include<iostream>
+#include<cassert>
 
-std::vector<SyntaxerNode*> SyntaxerNode::GiveChildrens(){
+SyntaxerNode** SyntaxerNode::GiveChildrens(){
     return childrens_;
+}
+
+int SyntaxerNode::GiveSize(){
+    return size;
 }
 
 Token SyntaxerNode::GiveToken(){
@@ -9,7 +16,10 @@ Token SyntaxerNode::GiveToken(){
 }
 
 void SyntaxerNode::AddChildren(SyntaxerNode* now){
-    childrens_.push_back(now);
+    if(size == capacity){
+        resize();
+    }
+    childrens_[size++] = now;
 }
 
 void SyntaxerNode::UpdateLexeme(std::string now){

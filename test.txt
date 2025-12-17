@@ -1,5 +1,21 @@
-int x = 10;
-print("hello");
-if (x > 5) {
-    x = x + 1;
+
+int f(int a,int b){
+    double tr = 54 * ty;
+    for(int i = 0;i < n;i= i + 1){
+        int x = 4;
+        while(x != 54){
+            print(45 * x);
+            if(x > 45){
+                break;
+            }
+            x = x/45;
+        }
+    }
+    return a * b / 4 * 56;
 }
+
+int g(){
+    return obr(a, mod - 2);
+}
+
+

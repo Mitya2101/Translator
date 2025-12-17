@@ -1,8 +1,6 @@
+
 #include "Syntaxer.h"
-
-
-
-
+#include<iostream>
 
 
 Syntaxer::Syntaxer(const std::string& sourceName):lexer(sourceName){};
@@ -42,6 +40,9 @@ SyntaxerNode* Syntaxer::If(){
 
     SyntaxerNode* expr = Expr();
 
+
+
+
     if(lexer.currentToken().lexeme != ")"){
         throw BuildError({")"},lexer.currentToken());
     }
@@ -79,7 +80,6 @@ SyntaxerNode* Syntaxer::If(){
             throw BuildError({"if","{"},lexer.currentToken());
         }
     }
-    lexer.next();
     return if_node;
 }
 
@@ -109,9 +109,12 @@ SyntaxerNode* Syntaxer::Return(){
     return_node->UpdateLexeme("return");
     return_node->UpdateType(Token::Type::KwReturn);
     return_node->UpdatePos(lexer.currentToken().pos);
+    lexer.next();
 
     return_node->AddChildren(Expr());
-
+    if(lexer.currentToken().lexeme != ";"){
+        throw BuildError({";"},lexer.currentToken());
+    }
     lexer.next();
     return return_node;
 }
@@ -127,6 +130,10 @@ SyntaxerNode* Syntaxer::Break(){
     break_node->UpdatePos(lexer.currentToken().pos);
 
     lexer.next();
+    if(lexer.currentToken().lexeme != ";"){
+        throw BuildError({";"},lexer.currentToken());
+    }
+    lexer.next();
     return break_node;
 }
 
@@ -140,6 +147,12 @@ SyntaxerNode* Syntaxer::Continue(){
     continue_node->UpdateType(Token::Type::KwContinue);
     continue_node->UpdatePos(lexer.currentToken().pos);
 
+    lexer.next();
+
+    if(lexer.currentToken().lexeme != ";"){
+        throw BuildError({";"},lexer.currentToken());
+
+    }
     lexer.next();
     return continue_node;
 }
@@ -228,7 +241,7 @@ SyntaxerNode* Syntaxer::Value(){
 
 SyntaxerNode* Syntaxer::DoubleValue(){
     SyntaxerNode* now = new SyntaxerNode();
-    if(lexer.currentToken().type != Token::Type::IntegerLiteral ||
+    if(lexer.currentToken().type != Token::Type::IntegerLiteral &&
     lexer.currentToken().type != Token::Type::FloatLiteral){
         throw BuildError({"number","double number"},lexer.currentToken());
     }
@@ -241,6 +254,7 @@ SyntaxerNode* Syntaxer::DoubleValue(){
 
 
 SyntaxerNode* Syntaxer::Expr(){
+
     SyntaxerNode* tmp = ExprAssign();
 
     while(lexer.currentToken().lexeme == ","){
@@ -251,17 +265,16 @@ SyntaxerNode* Syntaxer::Expr(){
         lexer.next();
 
         SyntaxerNode* cur = ExprAssign();
-
-
-
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
         tmp = tmp1;
     }
+
     return tmp;
 }
 
 SyntaxerNode* Syntaxer::ExprAssign(){
+
     SyntaxerNode* tmp = ExprLogicOr();
 
     while(lexer.currentToken().lexeme == "="){
@@ -279,6 +292,7 @@ SyntaxerNode* Syntaxer::ExprAssign(){
         tmp1->AddChildren(cur);
         tmp = tmp1;
     }
+
     return tmp;
 }
 
@@ -299,11 +313,13 @@ SyntaxerNode* Syntaxer::ExprLogicOr(){
         tmp1->AddChildren(cur);
         tmp = tmp1;
     }
+
     return tmp;
 }
 
 
 SyntaxerNode* Syntaxer::ExprLogicAnd(){
+
     SyntaxerNode* tmp = ExprEquality();
 
     while(lexer.currentToken().lexeme == "&&"){
@@ -320,10 +336,12 @@ SyntaxerNode* Syntaxer::ExprLogicAnd(){
         tmp1->AddChildren(cur);
         tmp = tmp1;
     }
+
     return tmp;
 }
 
 SyntaxerNode* Syntaxer::ExprEquality(){
+
     SyntaxerNode* tmp = ExprRel();
 
     while(lexer.currentToken().lexeme == "==" ||
@@ -341,11 +359,13 @@ SyntaxerNode* Syntaxer::ExprEquality(){
         tmp1->AddChildren(cur);
         tmp = tmp1;
     }
+
     return tmp;
 }
 
 
 SyntaxerNode* Syntaxer::ExprRel(){
+
     SyntaxerNode* tmp = ExprAdd();
 
     while(lexer.currentToken().lexeme == "<=" ||
@@ -387,11 +407,15 @@ SyntaxerNode* Syntaxer::ExprAdd(){
         tmp1->AddChildren(cur);
         tmp = tmp1;
     }
+    
     return tmp;
 }
 
 SyntaxerNode* Syntaxer::ExprMul(){
-    SyntaxerNode* tmp = ExprPostfix();
+
+    SyntaxerNode* tmp = ExprUnary();
+
+ 
 
     while(lexer.currentToken().lexeme == "*" ||
         lexer.currentToken().lexeme == "%" ||
@@ -400,28 +424,24 @@ SyntaxerNode* Syntaxer::ExprMul(){
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
-
-
         lexer.next();
-        SyntaxerNode* cur = ExprPostfix();
-
         tmp1->AddChildren(tmp);
-        tmp1->AddChildren(cur);
+        tmp1->AddChildren(ExprUnary());
         tmp = tmp1;
     }
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprPostfix(){
-    return ExprUnary();
-}
+
 
 
 SyntaxerNode* Syntaxer::ExprUnary(){
-    SyntaxerNode* tmp = new SyntaxerNode();
+
     if(lexer.currentToken().lexeme == "!" ||
     lexer.currentToken().lexeme == "-" ||
     lexer.currentToken().lexeme == "+"){
+        SyntaxerNode* tmp = new SyntaxerNode();
+
         tmp->UpdateLexeme(lexer.currentToken().lexeme);
         tmp->UpdateType(lexer.currentToken().type);
         tmp->UpdatePos(lexer.currentToken().pos);
@@ -451,7 +471,8 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
     if(lexer.currentToken().type != Token::Type::IntegerLiteral
     && lexer.currentToken().type != Token::Type::FloatLiteral
     && lexer.currentToken().type != Token::Type::CharLiteral
-    && lexer.currentToken().type != Token::Type::StringLiteral){
+    && lexer.currentToken().type != Token::Type::StringLiteral
+    && lexer.currentToken().type != Token::Type::Identifier){
         throw BuildError({"(","digit","char"},lexer.currentToken());
     }
 
@@ -460,12 +481,17 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
     tmp->UpdateType(lexer.currentToken().type);
     tmp->UpdatePos(lexer.currentToken().pos);
 
-    if(lexer.currentToken().type == Token::Type::StringLiteral){
+
+    if(lexer.currentToken().type == Token::Type::StringLiteral || 
+    lexer.currentToken().type == Token::Type::Identifier){
         lexer.next();
         if(lexer.currentToken().lexeme == "("){
+            lexer.next();
             while(lexer.currentToken().lexeme != ")"){
+
                 tmp->AddChildren(ExprAssign());
                 if(lexer.currentToken().lexeme == ")"){
+                    lexer.next();
                     break;
                 }
                 if(lexer.currentToken().lexeme != ","){
@@ -485,6 +511,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
         }
         return tmp;
     }
+    lexer.next();
     return tmp;
 }
 
@@ -498,6 +525,7 @@ SyntaxerNode* Syntaxer::Program() {
 
     while (lexer.currentToken().type != Token::Type::EndOfFile) {
         SyntaxerNode* stmt = Statement();
+        root->UpdateLexeme("Program");
         root->AddChildren(stmt);
     }
 
@@ -521,6 +549,7 @@ SyntaxerNode* Syntaxer::ProgramNoCreateFunction() {
     return root;
 }
 SyntaxerNode* Syntaxer::Statement() {
+
     const Token& tok = lexer.currentToken();
     const std::string& lx = tok.lexeme;
 
@@ -529,6 +558,7 @@ SyntaxerNode* Syntaxer::Statement() {
     }
 
     // if / while / for / return / break / continue
+
     if (lx == "if")       return If();
     if (lx == "while")    return While();
     if (lx == "for")      return For();
@@ -536,17 +566,23 @@ SyntaxerNode* Syntaxer::Statement() {
     if (lx == "break")    return Break();
     if (lx == "continue") return Continue();
 
+
     // начало объявления функции или переменной/массива
     if (lx == "int" || lx == "double" || lx == "char" || lx == "bool") {
         return CreateFunctionOrVariableOrArray();
     }
 
+
     // иначе — просто выражение с точкой с запятой: <Expr> ";"
     SyntaxerNode* expr = Expr();
+
+
+
     if (lexer.currentToken().lexeme != ";") {
         throw BuildError({";"}, lexer.currentToken());
     }
     lexer.next(); // съели ';'
+
     return expr;
 }
 
@@ -558,7 +594,6 @@ SyntaxerNode* Syntaxer::StatementNoCreationFunction() {
         (tok.type == Token::Type::CloseBracket && lx == "}")) {
         throw BuildError({"statement inside block"}, tok);
     }
-
     if (lx == "if")       return If();
     if (lx == "while")    return While();
     if (lx == "for")      return For();

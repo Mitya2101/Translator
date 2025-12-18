@@ -10,6 +10,8 @@ class SyntaxerNode{
         void AddChildren(SyntaxerNode* now);
         void UpdateType(Token::Type a);
         void UpdateLexeme(std::string now);
+        Position GivePosition();
+        std::string GiveLexeme();
         void UpdatePos(Position a);
         SyntaxerNode** GiveChildrens();
         int GiveSize();

@@ -3,9 +3,6 @@ char
 bool
 float
 void
-class
-constructor
-main
 if
 elif
 else
@@ -14,5 +11,3 @@ for
 return
 break
 continue
-true
-false

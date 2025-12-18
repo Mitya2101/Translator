@@ -15,6 +15,11 @@ Token SyntaxerNode::GiveToken(){
     return cur_;
 }
 
+std::string SyntaxerNode::GiveLexeme(){
+    return cur_.lexeme;
+}
+
+
 void SyntaxerNode::AddChildren(SyntaxerNode* now){
     if(size == capacity){
         resize();
@@ -32,4 +37,9 @@ void SyntaxerNode::UpdateType(Token::Type a){
 
 void SyntaxerNode::UpdatePos(Position a){
     cur_.pos = a;
+}
+
+
+Position SyntaxerNode::GivePosition(){
+    return cur_.pos;
 }

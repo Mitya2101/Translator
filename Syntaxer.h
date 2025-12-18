@@ -5,6 +5,7 @@
 #include "TFunc.h"
 #include "TID.h"
 
+
 enum NotTerminal{
     Start,
     Program,
@@ -51,7 +52,13 @@ public:
     SyntaxerNode* Start();
 
     Lexer lexer;
-
+    std::vector<TID> tids;
+    std::vector<Types> all;
+    TFunc func;
+    bool InCycle = false;
+    int InFunction = -1;
+    std::string cur_function_name_;
+    std::vector<Types> cur_func;
 private:
     SyntaxerNode* Program();
     SyntaxerNode* ProgramNoCreateFunction();
@@ -91,4 +98,7 @@ private:
 
     SyntaxerNode* ArgList();
     SyntaxerNode* ArgListType();
+
+    bool Find(std::string name);
+    TIDElement* Give(std::string name);
 };

@@ -7,7 +7,9 @@ int main() {
 
     try{
         a.Start();
+        std::cout<<"OK";
     }catch(const std::string & a){
+        std::cout<<a;
     }
 
 

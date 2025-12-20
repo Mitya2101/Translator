@@ -52,13 +52,13 @@ public:
     SyntaxerNode* Start();
 
     Lexer lexer;
-    std::vector<TID> tids;
+    std::vector<std::vector<TID>> tids;
     std::vector<Types> all;
     TFunc func;
     bool InCycle = false;
     int InFunction = -1;
     std::string cur_function_name_;
-    std::vector<Types> cur_func;
+    std::vector<TIDElement*> cur_func;
 private:
     SyntaxerNode* Program();
     SyntaxerNode* ProgramNoCreateFunction();

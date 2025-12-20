@@ -1,22 +1,23 @@
 #pragma once
 #include "SyntaxerNode.h"
 #include<vector>
+#include "TID.h"
 
 std::string UpdateName(std::string name,std::vector<Types> param);
 
 class TFuncElement{
 private:
     std::string name_;
-    std::vector<Types> param_types_;
+    std::vector<TIDElement*> param_types_;
     Types return_value_;
     SyntaxerNode* create_;
 public:
     std::string GiveName();
-    std::vector<Types> GiveParam();
+    std::vector<TIDElement*> GiveParam();
     Types GiveReturnValue();
     SyntaxerNode* GiveCreate();
     TFuncElement(std::string name,
-        std::vector<Types> param_types,
+        std::vector<TIDElement*> param_types,
         Types return_value,SyntaxerNode* create_);
 };
 

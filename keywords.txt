@@ -1,6 +1,7 @@
 int
 char
 bool
+double
 float
 void
 if

@@ -189,6 +189,8 @@ Token Lexer::scanWordOrKeyword() {
         if (buf == "char")        return make(T::KwChar, buf, tokLine, tokCol);
         if (buf == "bool")        return make(T::KwBool, buf, tokLine, tokCol);
         if (buf == "float")       return make(T::KwFloat, buf, tokLine, tokCol);
+        if (buf == "double")       return make(T::KwFloat, buf, tokLine, tokCol);
+
         if (buf == "void")        return make(T::KwVoid, buf, tokLine, tokCol);
 
         if (buf == "main")        return make(T::KwMain, buf, tokLine, tokCol);

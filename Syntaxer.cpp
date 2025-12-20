@@ -2,10 +2,25 @@
 #include<iostream>
 #include<cassert>
 
+Types StringToType(std::string a){
+    if(a == "int"){
+        return Types::INT;
+    }
+    if(a == "double"){
+        return Types::DOUBLE;
+    }
+    if(a == "bool"){
+        return Types::BOOL;
+    }
+    return Types::CHAR;
+}
+
+
 Syntaxer::Syntaxer(const std::string& sourceName):lexer(sourceName){}
 
 
 SyntaxerNode* Syntaxer::Start(){
+    tids.push_back({});
     return Program();
 }
 
@@ -145,6 +160,15 @@ SyntaxerNode* Syntaxer::Return(){
 
     if(InFunction == -1){
         throw "Return was wrtitten not in function";
+    }
+
+    if(lexer.currentToken().lexeme == ";"){
+        lexer.next();
+        if(func.Get(InFunction).GiveReturnValue() != Types::VOID){
+            throw "Return in function " + func.Get(InFunction).GiveName() + 
+            "has different type with return value";
+        }
+        return return_node;
     }
     
     SyntaxerNode* tu = Expr();
@@ -628,6 +652,7 @@ std::string TypeToString(Types a){
     if(a == Types::VOID){
         return "void";
     }
+    return "";
 }
 
 SyntaxerNode* Syntaxer::ExprUnary(){
@@ -738,7 +763,9 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
                     throw "Incorrect size of " + name + "array";
                 }
             }
+
             else if(IsArray<double>(help1) != nullptr){
+            
                 if(IsArray<double>(help1)->GiveSizes().size() != cnt){
                     throw "Incorrect size of " + name + "array";
                 }
@@ -787,7 +814,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
 }
 
 SyntaxerNode* Syntaxer::Program() {
-    tids.push_back(TID());
+    tids.back().push_back(TID());
     SyntaxerNode* root = new SyntaxerNode();
     root->UpdateLexeme("Program");
     root->UpdateType(Token::Type::Identifier);
@@ -798,12 +825,12 @@ SyntaxerNode* Syntaxer::Program() {
         root->UpdateLexeme("Program");
         root->AddChildren(stmt);
     }
-    tids.pop_back();
+    tids.back().pop_back();
     return root;
 }
 
 SyntaxerNode* Syntaxer::ProgramNoCreateFunction() {
-    tids.push_back(TID());
+    tids.back().push_back({TID()});
     SyntaxerNode* root = new SyntaxerNode();
     root->UpdateLexeme("ProgramNoCreateFunction");
     root->UpdateType(Token::Type::Identifier);
@@ -816,7 +843,7 @@ SyntaxerNode* Syntaxer::ProgramNoCreateFunction() {
         SyntaxerNode* stmt = StatementNoCreationFunction();
         root->AddChildren(stmt);
     }
-    tids.pop_back();
+    tids.back().pop_back();
     return root;
 }
 SyntaxerNode* Syntaxer::Statement() {
@@ -859,8 +886,8 @@ SyntaxerNode* Syntaxer::Statement() {
 }
 
 bool Syntaxer::Find(std::string name){
-    for(int i =tids.size() - 1;i >= 0;i--){
-        if(tids[i].Find(name)){
+    for(int i =tids.back().size() - 1;i >= 0;i--){
+        if(tids.back()[i].Find(name)){
             return true;
         }
     }
@@ -868,9 +895,9 @@ bool Syntaxer::Find(std::string name){
 }
 
 TIDElement* Syntaxer::Give(std::string name){
-    for(int i =tids.size() - 1;i >= 0;i--){
-        if(tids[i].Find(name)){
-            return tids[i].GetVar(name);
+    for(int i =tids.back().size() - 1;i >= 0;i--){
+        if(tids.back()[i].Find(name)){
+            return tids.back()[i].GetVar(name);
         }
     }
     throw BuildSemanticError(name);
@@ -894,10 +921,6 @@ SyntaxerNode* Syntaxer::StatementNoCreationFunction() {
     // Внутри блока запрещено объявлять функции, только переменные/массивы
     if (lx == "int" || lx == "double" || lx == "char" || lx == "bool") {
         SyntaxerNode* decl = CreateVariableOrArray();
-        if (lexer.currentToken().lexeme != ";") {
-            throw BuildError({";"}, lexer.currentToken());
-        }
-        lexer.next(); // ';'
         return decl;
     }
 
@@ -939,16 +962,16 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         }
         
         if(all.back() == Types::BOOL){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back())));
         }else if(all.back() == Types::CHAR){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<char>(nameNode->GiveLexeme(),all.back())));
         }else if(all.back() == Types::INT){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),all.back())));
         }else if(all.back() == Types::DOUBLE){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back())));
         }
         all.pop_back();
@@ -966,16 +989,16 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
             throw nameNode->GiveLexeme() + "- such variable does not exists";
         }
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back())));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<char>(nameNode->GiveLexeme(),all.back())));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),all.back())));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<double>(nameNode->GiveLexeme(),all.back())));
         }
         all.pop_back();
@@ -1006,15 +1029,15 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         }
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::BOOL,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::BOOL,cnt)));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::DOUBLE,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::DOUBLE,cnt)));
 
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::INT,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::INT,cnt)));
 
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::CHAR,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::CHAR,cnt)));
         }
 
         all.push_back(StringToType(typeNode->GiveLexeme()));
@@ -1030,18 +1053,6 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
 }
 
 
-Types StringToType(std::string a){
-    if(a == "int"){
-        return Types::INT;
-    }
-    if(a == "double"){
-        return Types::DOUBLE;
-    }
-    if(a == "bool"){
-        return Types::BOOL;
-    }
-    return Types::CHAR;
-}
 
 
 SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
@@ -1102,8 +1113,16 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             
             int was = InFunction;
             InFunction = func.GiveSize() - 1;
+            tids.push_back(tids[0]);
+            tids.back().push_back(TID());
+            for(int i =0 ;i < cur_func.size();i++){
+                tids.back().back().CreateVar(cur_func[i]);
+            }
+
             SyntaxerNode* body = ProgramNoCreateFunction();
             InFunction = was;
+
+            tids.pop_back();
     
             if (lexer.currentToken().lexeme != "}") {
                 throw BuildError({"}"}, lexer.currentToken());
@@ -1169,8 +1188,15 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
 
         int was = InFunction;
         InFunction = func.GiveSize() - 1;
+        tids.push_back(tids[0]);
+        tids.back().push_back(TID());
+        for(int i =0 ;i < cur_func.size();i++){
+            tids.back().back().CreateVar(cur_func[i]);
+        }
         SyntaxerNode* body = ProgramNoCreateFunction();
         InFunction = was;
+
+        tids.pop_back();
 
         if (lexer.currentToken().lexeme != "}") {
             throw BuildError({"}"}, lexer.currentToken());
@@ -1196,16 +1222,16 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         }
         
         if(all.back() == Types::BOOL){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back())));
         }else if(all.back() == Types::CHAR){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<char>(nameNode->GiveLexeme(),all.back())));
         }else if(all.back() == Types::INT){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),all.back())));
         }else if(all.back() == Types::DOUBLE){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back())));
         }
         all.pop_back();
@@ -1223,16 +1249,16 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             throw nameNode->GiveLexeme() + "- such variable does not exists";
         }
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back())));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<char>(nameNode->GiveLexeme(),all.back())));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),all.back())));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<double>(nameNode->GiveLexeme(),all.back())));
         }
         all.pop_back();
@@ -1263,18 +1289,27 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         }
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::BOOL,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::BOOL,cnt)));
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::DOUBLE,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::DOUBLE,cnt)));
 
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::INT,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::INT,cnt)));
 
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-            tids.back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::CHAR,cnt)));
+            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,Types::CHAR,cnt)));
         }
 
         all.push_back(StringToType(typeNode->GiveLexeme()));
+
+
+        if(lexer.currentToken().lexeme == "=" && cnt == 1){
+            lexer.next();
+            if(lexer.currentToken().type != Token::Type::StringLiteral){
+                throw BuildError({"String literal"},lexer.currentToken());
+            }
+            lexer.next();
+        }
 
         if (lexer.currentToken().lexeme != ";") {
             throw BuildError({";"}, lexer.currentToken());
@@ -1303,16 +1338,87 @@ SyntaxerNode* Syntaxer::ArgListType() {
     };
 
     SyntaxerNode* t = Type();
+    int cnt = 0;
+    while(lexer.currentToken().lexeme == "["){
+        lexer.next();
+        if(lexer.currentToken().lexeme == "]"){
+            cnt++;
+        }else{
+            throw BuildError({"["},lexer.currentToken());
+        }
+        lexer.next();
+    }
     SyntaxerNode* v = Variable();
+    std::string now = v->GiveLexeme();
+    // std::cout<<now<<' '<<cnt<<std::endl;
+    v->UpdateLexeme(now);
+    if(cnt != 0){
+        Types tr = StringToType(t->GiveLexeme());
+        if(t->GiveLexeme() == "int"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<int>(now,tr,cnt)));
+        }else if(t->GiveLexeme() == "double"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<double>(now,tr,cnt)));
+        }else if(t->GiveLexeme() == "bool"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(now,tr,cnt)));
+        }else if(t->GiveLexeme() == "char"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<char>(now,tr,cnt)));
+        }
+    }else{
+        Types tr = StringToType(t->GiveLexeme());
+        if(t->GiveLexeme() == "int"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<int>(now,tr)));
+        }else if(t->GiveLexeme() == "double"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<double>(now,tr)));
+        }else if(t->GiveLexeme() == "bool"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<bool>(now,tr)));
+        }else if(t->GiveLexeme() == "char"){
+            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<char>(now,tr)));
+        }
+    }
     list->AddChildren(makeParam(t, v));
 
     while (lexer.currentToken().lexeme == ",") {
         lexer.next(); // ','
         SyntaxerNode* t2 = Type();
+        cnt = 0;
+        while(lexer.currentToken().lexeme == "["){
+            lexer.next();
+            if(lexer.currentToken().lexeme == "]"){
+                cnt++;
+            }else{
+                throw BuildError({"["},lexer.currentToken());
+            }
+            lexer.next();
+        }
         SyntaxerNode* v2 = Variable();
         cur_function_name_ += t2->GiveLexeme();
 
-        cur_func.push_back(StringToType(t2->GiveLexeme()));
+
+        
+        v->UpdateLexeme(now);
+        if(cnt != 0){
+            Types tr = StringToType(t->GiveLexeme());
+            if(t->GiveLexeme() == "int"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<int>(now,tr,cnt)));
+            }else if(t->GiveLexeme() == "double"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<double>(now,tr,cnt)));
+            }else if(t->GiveLexeme() == "bool"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(now,tr,cnt)));
+            }else if(t->GiveLexeme() == "char"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<char>(now,tr,cnt)));
+            }
+        }else{
+            Types tr = StringToType(t->GiveLexeme());
+            if(t->GiveLexeme() == "int"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<int>(now,tr)));
+            }else if(t->GiveLexeme() == "double"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<double>(now,tr)));
+            }else if(t->GiveLexeme() == "bool"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<bool>(now,tr)));
+            }else if(t->GiveLexeme() == "char"){
+                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<char>(now,tr)));
+            }
+        }
         list->AddChildren(makeParam(t2, v2));
     }
 
@@ -1362,13 +1468,13 @@ SyntaxerNode* Syntaxer::For() {
             init = CreateVariableOrArray();
         } else {
             init = Expr();
+            if (lexer.currentToken().lexeme != ";") {
+                throw BuildError({";"}, lexer.currentToken());
+            }
+            lexer.next(); // ';'
+
         }
     }
-
-    if (lexer.currentToken().lexeme != ";") {
-        throw BuildError({";"}, lexer.currentToken());
-    }
-    lexer.next(); // ';'
 
     // --- Условие: [ Expr ] ";" ---
     SyntaxerNode* cond = nullptr;
@@ -1396,11 +1502,11 @@ SyntaxerNode* Syntaxer::For() {
         throw BuildError({"{"}, lexer.currentToken());
     }
     lexer.next(); // '{'
+
     int was = InCycle;
     InCycle = true;
     SyntaxerNode* body = ProgramNoCreateFunction();
     InCycle = was;
-
     if (lexer.currentToken().lexeme != "}") {
         throw BuildError({"}"}, lexer.currentToken());
     }

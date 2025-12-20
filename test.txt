@@ -1,30 +1,5 @@
-
-int a[MAXN][MAXN][6];
-x = 45 * 5,y = 56;
-int b;
-int f(int a,int b){
-    double tr = 54 * ty;
-    for(;;){
-        int x = 4;
-        while(x != 54){
-            print(45 * x);
-            if(x > 45){
-                break;
-            } else {}
-            //else{}
-            1 = 2;
-            x = x/45;
-        }
-    }
-    //int g() {return 0;}
-
-
-
-    return a * b / 4 * 56;
+void f(int []a){
+   if(a[45][45] > 45){
+      return;
+   }
 }
-
-int g(){
-    return obr(a, mod - 2);
-}
-
-

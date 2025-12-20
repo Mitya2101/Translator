@@ -1,6 +1,6 @@
 #include "TFunc.h"
 
-std::string TypeToString(Types a){
+std::string TypeToString1(Types a){
     if(a == Types::BOOL){
         return "bool";
     }
@@ -16,12 +16,13 @@ std::string TypeToString(Types a){
     if(a == Types::VOID){
         return "void";
     }
+    return "";
 }
 
-std::string UpdateName(std::string name,std::vector<Types> param){
+std::string UpdateName(std::string name,std::vector<TIDElement*> param){
     name += " ";
     for(int i = 0;i < param.size();i++){
-        name += TypeToString(param[i]);
+        name += TypeToString1(param[i]->GiveType());
         name += " ";
     }
     return name;
@@ -29,7 +30,7 @@ std::string UpdateName(std::string name,std::vector<Types> param){
 
 
 TFuncElement::TFuncElement(std::string name,
-    std::vector<Types> param_types,Types return_value,SyntaxerNode* create):name_(UpdateName(name,param_types)),
+    std::vector<TIDElement*> param_types,Types return_value,SyntaxerNode* create):name_(UpdateName(name,param_types)),
 param_types_(param_types),return_value_(return_value),create_(create){};
 
 
@@ -38,7 +39,7 @@ std::string TFuncElement::GiveName(){
     return name_;
 }
 
-std::vector<Types> TFuncElement::GiveParam(){
+std::vector<TIDElement*> TFuncElement::GiveParam(){
     return param_types_;
 }
 

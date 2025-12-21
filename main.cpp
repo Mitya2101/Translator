@@ -10,6 +10,8 @@ int main() {
         std::cout<<"OK";
     }catch(const std::string & a){
         std::cout<<a;
+    }catch(const char* msg){
+        std::cout<<msg;
     }
 
 

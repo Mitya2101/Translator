@@ -13,7 +13,7 @@ enum Types{
     INT,
     DOUBLE,
     CHAR,
-    BOOL
+    BOOL,
 };
 
 

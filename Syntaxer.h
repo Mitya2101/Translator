@@ -53,7 +53,7 @@ public:
 
     Lexer lexer;
     std::vector<std::vector<TID>> tids;
-    std::vector<Types> all;
+    std::vector<std::pair<Types,int>> all;
     TFunc func;
     bool InCycle = false;
     int InFunction = -1;

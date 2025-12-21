@@ -25,13 +25,14 @@ std::string UpdateName(std::string name,std::vector<TIDElement*> param){
         name += TypeToString1(param[i]->GiveType());
         name += " ";
     }
+    name.pop_back();
     return name;
 }
 
 
 TFuncElement::TFuncElement(std::string name,
-    std::vector<TIDElement*> param_types,Types return_value,SyntaxerNode* create):name_(UpdateName(name,param_types)),
-param_types_(param_types),return_value_(return_value),create_(create){};
+    std::vector<TIDElement*> param_types,Types return_value,SyntaxerNode* create,int size):name_(UpdateName(name,param_types)),
+param_types_(param_types),return_value_(return_value),create_(create),size_(size){};
 
 
 
@@ -74,6 +75,10 @@ TFuncElement TFunc::Get(int ind){
         throw "Get in TFunc";
     }
     return all_[ind];
+}
+
+int TFuncElement::GiveArraySize(){
+    return size_;
 }
 
 TFuncElement TFunc::Get(std::string name){

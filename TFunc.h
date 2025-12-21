@@ -10,15 +10,17 @@ private:
     std::string name_;
     std::vector<TIDElement*> param_types_;
     Types return_value_;
+    int size_ = 0;
     SyntaxerNode* create_;
 public:
     std::string GiveName();
     std::vector<TIDElement*> GiveParam();
     Types GiveReturnValue();
+    int GiveArraySize();
     SyntaxerNode* GiveCreate();
     TFuncElement(std::string name,
         std::vector<TIDElement*> param_types,
-        Types return_value,SyntaxerNode* create_);
+        Types return_value,SyntaxerNode* create_,int size);
 };
 
 class TFunc{

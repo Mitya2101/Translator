@@ -80,8 +80,8 @@ std::string GiveType(Types b){
 std::string BuildSemanticError1(std::pair<Types,int> a,std::pair<Types,int> b,SyntaxerNode* help){
     return "You have different types in " + std::to_string(help->GivePosition().line) + " line and " + 
     std::to_string(help->GivePosition().line) + ". Have " + 
-    GiveType(a.first) + "and " + std::to_string(a.second) + "dimensional" + ", but excepted " +GiveType(b.first) + 
-    "and " + std::to_string(b.second) + "dimensional";  
+    GiveType(a.first) + " and " + std::to_string(a.second) + " dimensional" + ", but excepted " +GiveType(b.first) + 
+    " and " + std::to_string(b.second) + " dimensional";  
 }
 
 
@@ -317,7 +317,7 @@ SyntaxerNode* Syntaxer::Type(){
 
 SyntaxerNode* Syntaxer::Variable(){
     if(lexer.currentToken().lexeme == "int" || 
-    lexer.currentToken().lexeme == "float" || 
+    lexer.currentToken().lexeme == "double" || 
     lexer.currentToken().lexeme == "bool" || 
     lexer.currentToken().lexeme == "void" || 
     lexer.currentToken().lexeme == "for" || 
@@ -880,7 +880,7 @@ SyntaxerNode* Syntaxer::Statement() {
 
 
     // начало объявления функции или переменной/массива
-    if (lx == "int" || lx == "float" || lx == "char" || lx == "bool" || lx == "void") {
+    if (lx == "int" || lx == "double" || lx == "char" || lx == "bool" || lx == "void") {
         return CreateFunctionOrVariableOrArray();
     }
 
@@ -1339,6 +1339,9 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
 
 
         if(lexer.currentToken().lexeme == "=" && cnt == 1){
+            if(typeNode->GiveLexeme() != "char"){
+                throw "You can init only char array, but " + nameNode->GiveLexeme() + " - " + typeNode->GiveLexeme() + " array";
+            }
             lexer.next();
             if(lexer.currentToken().type != Token::Type::StringLiteral){
                 throw BuildError({"String literal"},lexer.currentToken());

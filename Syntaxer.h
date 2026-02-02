@@ -4,6 +4,7 @@
 #include "SyntaxerNode.h"
 #include "TFunc.h"
 #include "TID.h"
+#include "POLIZ.h"
 
 
 enum NotTerminal{
@@ -52,13 +53,22 @@ public:
     SyntaxerNode* Start();
 
     Lexer lexer;
+    POLIZ poliz;
     std::vector<std::vector<TID>> tids;
     std::vector<std::pair<Types,int>> all;
+    std::vector<std::vector<int>> helper_break;
+    std::vector<std::vector<int>> continue_helper;
+    std::vector<int> size_counter;
+    std::vector<int> return_helper;
+
+
     TFunc func;
     bool InCycle = false;
     int InFunction = -1;
     std::string cur_function_name_;
     std::vector<TIDElement*> cur_func;
+    void PrintPoliz();
+
 private:
     SyntaxerNode* Program();
     SyntaxerNode* ProgramNoCreateFunction();
@@ -101,4 +111,7 @@ private:
 
     bool Find(std::string name);
     TIDElement* Give(std::string name);
+
+
+    int dfs(SyntaxerNode* now);
 };

@@ -12,15 +12,17 @@ private:
     Types return_value_;
     int size_ = 0;
     SyntaxerNode* create_;
+    int poliz_index;
 public:
     std::string GiveName();
     std::vector<TIDElement*> GiveParam();
     Types GiveReturnValue();
     int GiveArraySize();
     SyntaxerNode* GiveCreate();
+    int GivePolizIndex();
     TFuncElement(std::string name,
         std::vector<TIDElement*> param_types,
-        Types return_value,SyntaxerNode* create_,int size);
+        Types return_value,SyntaxerNode* create_,int size,int poliz_index);
 };
 
 class TFunc{

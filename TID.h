@@ -8,6 +8,7 @@ class TIDElement{
 protected:
     std::string name_;
     Types cur_;
+    int offset_;
 public:
     std::string GiveName(){
         return name_; 
@@ -15,7 +16,7 @@ public:
     Types GiveType(){
         return cur_;
     }
-    TIDElement(std::string name,Types cur):
+    TIDElement(std::string name,Types cur,int offset):offset_(offset),
     name_(name),cur_(cur){
         if(cur_ == Types::VOID){
             throw "you cannot create var of void type";
@@ -24,6 +25,9 @@ public:
     virtual bool operator==(std::string name){
         return name_ == name;        
     }  
+    int GiveOffset(){
+        return offset_;
+    }
 };
 
 template<typename T>
@@ -32,17 +36,12 @@ private:
     std::vector<int> sizes_;
     std::vector<T> arr_;
 public:
-    TIDElementArray(std::string name,Types cur,std::vector<int> sizes):
-    sizes_(sizes),TIDElement(name,cur){
-        int tmp = 1;
-        for(int i =0 ;i < sizes_.size();i++){
-            tmp *= sizes_[i];
-        }
-        arr_.resize(tmp);
+    TIDElementArray(std::string name,Types cur,std::vector<int> sizes,int offset):
+    sizes_(sizes),TIDElement(name,cur,offset){
     };
     
-    TIDElementArray(std::string name,Types cur,int size_size):
-    TIDElement(name,cur){
+    TIDElementArray(std::string name,Types cur,int size_size,int offset):
+    TIDElement(name,cur,offset){
         sizes_.resize(size_size);
     }
     
@@ -52,6 +51,8 @@ public:
     const std::vector<T>& GiveArr(){
         return arr_;
     }
+
+    
 };
 
 template<typename T>
@@ -59,10 +60,10 @@ class TIDElementVariable:public TIDElement{
 private:
     T num_;
 public:
-    TIDElementVariable(std::string name,Types cur):
-    TIDElement(name,cur){};
-    TIDElementVariable(std::string name,Types cur,T num):
-    TIDElement(name,cur),num_(num){};
+    TIDElementVariable(std::string name,Types cur,int offset):
+    TIDElement(name,cur,offset){};
+    TIDElementVariable(std::string name,Types cur,T num,int offset):
+    TIDElement(name,cur,offset),num_(num){};
     const T& GiveNum(){
         return num_;    
     }

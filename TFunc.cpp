@@ -31,10 +31,13 @@ std::string UpdateName(std::string name,std::vector<TIDElement*> param){
 
 
 TFuncElement::TFuncElement(std::string name,
-    std::vector<TIDElement*> param_types,Types return_value,SyntaxerNode* create,int size):name_(UpdateName(name,param_types)),
-param_types_(param_types),return_value_(return_value),create_(create),size_(size){};
+    std::vector<TIDElement*> param_types,Types return_value,SyntaxerNode* create,int size,int poliz_index)
+    :name_(UpdateName(name,param_types)),
+param_types_(param_types),return_value_(return_value),create_(create),size_(size),poliz_index(poliz_index){};
 
-
+int TFuncElement::GivePolizIndex(){
+    return poliz_index;
+}
 
 std::string TFuncElement::GiveName(){
     return name_;

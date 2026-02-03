@@ -12,7 +12,6 @@ enum POLIZ_Element{
     FUNCTION_ADRESS,//
     END_OF_PROGRAM,//
     POLIZ_LABEL,//
-    ADRESS,
     ALLOCATE,//
     FREE,//
     UNARY_OPERATION,

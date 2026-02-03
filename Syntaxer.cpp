@@ -966,7 +966,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             }
             poliz.AddEl({POLIZ_Element::NUM,std::to_string(Give(name)->GiveOffset())});
             poliz.AddEl({POLIZ_Element::OPERATION,"+"});
-            poliz.AddEl({POLIZ_Element::ADRESS,""});
+            // poliz.AddEl({POLIZ_Element::ADRESS,""});
            
             
             all.push_back({help1->GiveType(),was - cnt});
@@ -980,7 +980,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
         }
         TIDElement* help1 = Give(tmp->GiveLexeme());
         poliz.AddEl({POLIZ_Element::NUM,std::to_string(help1->GiveOffset())});
-        poliz.AddEl({POLIZ_Element::ADRESS,""});
+        // poliz.AddEl({POLIZ_Element::ADRESS,""});
         if(IsVariable<int>(help1) != nullptr){
             all.push_back({Types::INT,0});
         }else if(IsVariable<bool>(help1) != nullptr){
@@ -1157,7 +1157,6 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme())== Types::CHAR){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
@@ -1165,16 +1164,12 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
-
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
-
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
@@ -1182,8 +1177,6 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
-
                 size_counter.back() += sizeof(double);
         }
 
@@ -1358,7 +1351,10 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 throw BuildError({"{"}, lexer.currentToken());
             }
             lexer.next(); // '{'
-            int ind_help = poliz.GiveSize();
+            int tmp_ind = poliz.GiveSize();
+            poliz.AddEl({POLIZ_Element::POLIZ_LABEL,""});
+            poliz.AddEl({POLIZ_Element::POLIZ_GO,""});
+            int ind_help = poliz.GiveSize();            
             poliz.AddEl({POLIZ_Element::ALLOCATE,""});
             func.CreateFunc(TFuncElement(nameNode->GiveLexeme(),
             cur_func,Types::VOID,root,0,poliz.GiveSize()));
@@ -1380,6 +1376,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             
             poliz.AddEl({POLIZ_Element::FREE,std::to_string(size_counter.back() - 
                 size_counter[size_counter.size() - 2])});
+            poliz.UpdateEl({POLIZ_Element::POLIZ_LABEL,std::to_string(poliz.GiveSize())},tmp_ind);
             size_counter.pop_back();
             InFunction = was;
 
@@ -1477,7 +1474,9 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         for(int i =0 ;i < cur_func.size();i++){
             tids.back().back().CreateVar(cur_func[i]);
         }
-
+        int tmp_ind = poliz.GiveSize();
+        poliz.AddEl({POLIZ_Element::POLIZ_LABEL,""});
+        poliz.AddEl({POLIZ_Element::POLIZ_GO,""});
         int ind = poliz.GiveSize();
         poliz.AddEl({POLIZ_Element::ALLOCATE,""});
 
@@ -1485,9 +1484,14 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
 
         poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
             size_counter[size_counter.size() - 2])},ind);
+            for(auto i:return_helper){
+                poliz.UpdateEl({POLIZ_Element::POLIZ_GO,std::to_string(poliz.GiveSize())},i);
+            }
         poliz.AddEl({POLIZ_Element::FREE,std::to_string(size_counter.back() - 
             size_counter[size_counter.size() - 2])});
         size_counter.pop_back();
+        poliz.UpdateEl({POLIZ_Element::POLIZ_LABEL,std::to_string(poliz.GiveSize())},tmp_ind);
+       
 
         InFunction = was;
 
@@ -1520,7 +1524,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
+
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme())== Types::CHAR){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
@@ -1528,7 +1532,6 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
 
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
@@ -1536,7 +1539,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
+
 
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
@@ -1545,7 +1548,6 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
                 poliz.AddEl({POLIZ_Element::NUM,std::to_string(size_counter.back())});
-                poliz.AddEl({POLIZ_Element::ADRESS,""});
 
                 size_counter.back() += sizeof(double);
         }
@@ -1950,8 +1952,6 @@ void Syntaxer::PrintPoliz(){
             std::cout << "END_OF_PROGRAM " << j.second << std::endl; 
         }else if(j.first == POLIZ_Element::POLIZ_LABEL){
             std::cout << "POLIZ_LABEL " << j.second << std::endl; 
-        }else if(j.first == POLIZ_Element::ADRESS){
-            std::cout << "ADRESS " << j.second << std::endl; 
         }else if(j.first == POLIZ_Element::UNARY_OPERATION){
             std::cout << "UNARY_OPERATION " << j.second << std::endl; 
         }else if(j.first == POLIZ_Element::CALL_ARRAY){

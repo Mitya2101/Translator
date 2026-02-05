@@ -1,0 +1,13 @@
+# Add these sources:
+#   vm.cpp
+#   run.cpp
+# and ensure vm.h/types.h are in include path.
+#
+# Example:
+# add_executable(my_lang
+#   lexer.cpp tokens.cpp trie.cpp
+#   Syntaxer.cpp SyntaxerNode.cpp
+#   TFunc.cpp
+#   vm.cpp
+#   run.cpp
+# )

@@ -27,6 +27,14 @@ VKind VM::kindFromTypes(Types t) {
 VM::VM(const POLIZ& poliz, const TFunc& funcs)
     : poliz_(poliz), funcs_(funcs) {
 
+    // Build function metadata from TFunc + POLIZ layout produced by your Syntaxer:
+    // LABEL <end_ip>
+    // ... function signature stuff ...
+    // ALLOCATE <bytes>
+    // FUNCTION_ADRESS <entry_after_alloc>
+    // ... body ...
+    // FREE <bytes>
+    // (end_ip points after FREE)
     for (int i = 0; i < funcs_.GiveSize(); ++i) {
         TFuncElement fe = funcs_.Get(i);
 
@@ -42,6 +50,7 @@ VM::VM(const POLIZ& poliz, const TFunc& funcs)
             fm.params.push_back(pm);
         }
 
+        // Your Syntaxer places POLIZ_LABEL(end_ip) two items before ALLOCATE in function prologue.
         if (fm.alloc_ip - 2 >= 0) {
             auto lab = poliz_.GiveEl(fm.alloc_ip - 2);
             if (lab.first == POLIZ_Element::POLIZ_LABEL && isDigits(lab.second)) {
@@ -94,6 +103,11 @@ static char decodeEscapedChar(const std::string& s) {
 }
 
 Value VM::parseLiteral(const std::string& s) {
+    // Heuristic:
+    // - contains '.' => double
+    // - all digits (possibly with leading '-') => int
+    // - short (<=2) => char (including escaped like "\n")
+    // - otherwise => string
     if (s.find('.') != std::string::npos) {
         double d = 0.0;
         try { d = std::stod(s); } catch (...) { throw RuntimeError("Bad double literal: " + s); }
@@ -119,7 +133,7 @@ VM::Cell& VM::ensureCell(std::int64_t addr) {
 
 const VM::Cell& VM::getCell(std::int64_t addr) const {
     auto it = mem_.find(addr);
-    if (it == mem_.end()) throw RuntimeError("Read from uninitialized cell at " + std::to_string(addr));
+    if (it == mem_.end()) throw RuntimeError("Read from missing cell at " + std::to_string(addr));
     return it->second;
 }
 
@@ -180,7 +194,7 @@ void VM::execOperation(const std::string& op) {
         Value rhs = asValue(pop());
         Address lhs = asAddress(pop());
         storeAt(lhs.offset, rhs);
-        push(rhs);
+        push(rhs); // assignment expression yields rhs
         return;
     }
 
@@ -262,6 +276,7 @@ void VM::execOperation(const std::string& op) {
 }
 
 void VM::execCall() {
+    // Stack convention: push args (addresses), then FUNCTION_ADRESS value, then CALL_FUNCTION
     Value f = asValue(pop());
     if (f.kind != VKind::Int) throw RuntimeError("FUNCTION_ADRESS must be int poliz index");
     int entry = (int)std::get<std::int64_t>(f.data);
@@ -290,6 +305,7 @@ void VM::execCall() {
 
     sp_ += alloc_bytes;
 
+    // Bind params as reference cells
     for (int i = 0; i < argc; ++i) {
         const ParamMeta& pm = fm.params[i];
         Cell& c = ensureCell(pm.offset);
@@ -336,6 +352,10 @@ void VM::run() {
         auto kind = cur.first;
         const std::string& arg = cur.second;
 
+        if (trace_) {
+            std::cerr << "[ip=" << ip_ << "] kind=" << (int)kind << " arg='" << arg << "'\n";
+        }
+
         switch (kind) {
             case POLIZ_Element::NUM:
                 push(parseLiteral(arg));
@@ -343,6 +363,7 @@ void VM::run() {
                 break;
 
             case POLIZ_Element::SYMBOL:
+                // IMPORTANT: SYMBOL must represent an address/offset (NOT a numeric literal).
                 push(Address{std::stoll(arg)});
                 ++ip_;
                 break;
@@ -391,6 +412,7 @@ void VM::run() {
                 break;
 
             case POLIZ_Element::CALL_ARRAY: {
+                // Convention: CALL_ARRAY expects the top of stack is an int address
                 Value off = asValue(pop());
                 if (off.kind != VKind::Int) throw RuntimeError("CALL_ARRAY expects int");
                 push(Address{std::get<std::int64_t>(off.data)});

@@ -45,24 +45,24 @@ public:
 
 private:
     struct Cell {
-        bool is_ref = false;     // параметр-ссылка хранит адрес цели
+        bool is_ref = false;     // reference cell stores a target address
         bool initialized = false;
 
         VKind kind = VKind::Void;
         std::variant<std::int64_t, double, bool, char, std::string> data;
 
-        std::int64_t ref_target = 0; // куда ссылается reference cell
+        std::int64_t ref_target = 0; // where reference points
     };
 
     struct ParamMeta {
-        std::int64_t offset = 0; // где лежит параметр (ячейка-ссылка)
+        std::int64_t offset = 0; // where param cell lives (it is a reference cell)
         Types type = Types::INT;
     };
 
     struct FuncMeta {
-        int entry_after_alloc = 0; // то, что кладёте в FUNCTION_ADRESS
-        int alloc_ip = 0;          // entry_after_alloc-1 (ALLOCATE перед телом)
-        int end_ip = 0;            // ip после FREE
+        int entry_after_alloc = 0; // what you store in FUNCTION_ADRESS
+        int alloc_ip = 0;          // entry_after_alloc - 1 (ALLOCATE just before body)
+        int end_ip = 0;            // ip right after FREE (end label)
         Types ret = Types::VOID;
         std::vector<ParamMeta> params;
     };

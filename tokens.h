@@ -8,7 +8,7 @@ struct Position {
     int column = 0;
 };
 
-enum Types{
+enum class Types{
     VOID,
     INT,
     DOUBLE,

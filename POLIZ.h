@@ -1,11 +1,14 @@
 #pragma once
 #include<vector>
+#include <string>
 
 
-enum POLIZ_Element{
-    NUM,//
+enum class POLIZ_Element{
+    INT,//
+    CHAR,
+    BOOL,
+    DOUBLE,
     OPERATION,//
-    SYMBOL,//
     POLIZ_GO,//
     POLIZ_FGO,//
     CALL_FUNCTION,//
@@ -14,8 +17,11 @@ enum POLIZ_Element{
     POLIZ_LABEL,//
     ALLOCATE,//
     FREE,//
+    ADRESS_INT,
+    ADRESS_BOOL,
+    ADRESS_CHAR,
+    ADRESS_DOUBLE,
     UNARY_OPERATION,
-    CALL_ARRAY
 };
 
 

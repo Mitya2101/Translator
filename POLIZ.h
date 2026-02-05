@@ -22,6 +22,8 @@ enum class POLIZ_Element{
     ADRESS_CHAR,
     ADRESS_DOUBLE,
     UNARY_OPERATION,
+    CALL_PRINT,
+    CALL_READ,
 };
 
 

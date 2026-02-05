@@ -35,7 +35,25 @@ std::string TypeToString(Types a){
 }
 
 
-Syntaxer::Syntaxer(const std::string& sourceName):lexer(sourceName){}
+Syntaxer::Syntaxer(const std::string& sourceName):lexer(sourceName){
+    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<int>("a",Types::INT,0)},
+    Types::VOID,nullptr,0,0));
+    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<bool>("a",Types::BOOL,0)},
+    Types::VOID,nullptr,0,0));
+    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<char>("a",Types::CHAR,0)},
+    Types::VOID,nullptr,0,0));
+    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<double>("a",Types::DOUBLE,0)},
+    Types::VOID,nullptr,0,0));
+
+    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<int>("a",Types::INT,0)},
+    Types::VOID,nullptr,0,0));
+    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<bool>("a",Types::BOOL,0)},
+    Types::VOID,nullptr,0,0));
+    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<char>("a",Types::CHAR,0)},
+    Types::VOID,nullptr,0,0));
+    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<double>("a",Types::DOUBLE,0)},
+    Types::VOID,nullptr,0,0));
+}
 
 
 SyntaxerNode* Syntaxer::Start(){
@@ -871,6 +889,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
         if(lexer.currentToken().lexeme == "("){
 
             lexer.next();
+            std::string tr = tmp->GiveLexeme();
             std::string name = tmp->GiveLexeme();
             std::vector<Types> param_type;
             while(lexer.currentToken().lexeme != ")"){
@@ -891,10 +910,25 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             if(!func.Find(name)){
                 throw BuildSemanticError(name);
             }
-            poliz.AddEl({POLIZ_Element::FUNCTION_ADRESS,std::to_string(func.Get(name).GivePolizIndex())});
-            poliz.AddEl({POLIZ_Element::CALL_FUNCTION,""});
+            if(tr == "print"){
+                poliz.AddEl({POLIZ_Element::CALL_PRINT,""});
+                all.push_back({func.Get(name).GiveReturnValue(),func.Get(name).GiveArraySize()});
 
-            all.push_back({func.Get(name).GiveReturnValue(),func.Get(name).GiveArraySize()});
+            }else if(tr == "read"){
+                POLIZ_Element help1 = poliz.GiveEl(poliz.GiveSize() - 1).first;
+                if(help1 != POLIZ_Element::ADRESS_BOOL && help1 != POLIZ_Element::ADRESS_CHAR
+                     && help1 != POLIZ_Element::ADRESS_DOUBLE && help1 != POLIZ_Element::ADRESS_INT){
+                    throw "You can read only on variable";
+                }
+                poliz.AddEl({POLIZ_Element::CALL_READ,""});
+                all.push_back({func.Get(name).GiveReturnValue(),func.Get(name).GiveArraySize()});
+
+            }else{
+                poliz.AddEl({POLIZ_Element::FUNCTION_ADRESS,std::to_string(func.Get(name).GivePolizIndex())});
+                poliz.AddEl({POLIZ_Element::CALL_FUNCTION,""});
+
+                all.push_back({func.Get(name).GiveReturnValue(),func.Get(name).GiveArraySize()});
+            }
             return tmp;
         }
         else if(lexer.currentToken().lexeme == "["){
@@ -1542,13 +1576,14 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         }
 
         lexer.next();
+        poliz.AddEl({POLIZ_Element::INT,std::to_string(size_counter.back())});
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<bool>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
-                poliz.AddEl({POLIZ_Element::ADRESS_BOOL,std::to_string(size_counter.back())});
+                poliz.AddEl({POLIZ_Element::ADRESS_BOOL,""});
 
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme())== Types::CHAR){
@@ -1556,14 +1591,14 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 new TIDElementVariable<char>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
-                poliz.AddEl({POLIZ_Element::ADRESS_CHAR,std::to_string(size_counter.back())});
+                poliz.AddEl({POLIZ_Element::ADRESS_CHAR,""});
 
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
                 new TIDElementVariable<int>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),size_counter.back())));
-                poliz.AddEl({POLIZ_Element::ADRESS_INT,std::to_string(size_counter.back())});
+                poliz.AddEl({POLIZ_Element::ADRESS_INT,""});
 
 
                 size_counter.back() += sizeof(int);
@@ -1572,7 +1607,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 new TIDElementVariable<double>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
                 size_counter.back())));
-                poliz.AddEl({POLIZ_Element::ADRESS_DOUBLE,std::to_string(size_counter.back())});
+                poliz.AddEl({POLIZ_Element::ADRESS_DOUBLE,""});
 
                 size_counter.back() += sizeof(double);
         }
@@ -1970,6 +2005,8 @@ std::string to_string(POLIZ_Element e) {
         case POLIZ_Element::ADRESS_CHAR:       return "ADRESS_CHAR";
         case POLIZ_Element::ADRESS_DOUBLE:    return "ADRESS_DOUBLE";
         case POLIZ_Element::UNARY_OPERATION:  return "UNARY_OPERATION";
+        case POLIZ_Element::CALL_PRINT:       return "CALL_PRINT";
+        case POLIZ_Element::CALL_READ:        return "CALL_READ";
         default:                              return "UNKNOWN";
     }
 }

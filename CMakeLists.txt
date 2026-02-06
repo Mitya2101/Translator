@@ -1,12 +1,21 @@
-cmake_minimum_required(VERSION 3.29)
-project(Lexer)
+cmake_minimum_required(VERSION 3.16)
+project(MyLang)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(Lexer main.cpp
+add_executable(MyLang
+        main.cpp
+
         lexer.cpp
-        lexer.h
         tokens.cpp
-        tokens.h
         trie.cpp
-        trie.h)
+
+        Syntaxer.cpp
+        SyntaxerNode.cpp
+        TFunc.cpp
+
+        vm.cpp
+)
+
+target_include_directories(MyLang PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

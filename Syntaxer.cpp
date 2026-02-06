@@ -857,10 +857,70 @@ SyntaxerNode* Syntaxer::ExprUnary(){
     return ExprPrimary();
 }
 
+
+
 SyntaxerNode* Syntaxer::ExprPrimary(){
     SyntaxerNode* tmp = new SyntaxerNode();
     if(lexer.currentToken().lexeme == "("){
         lexer.next();
+        if(lexer.currentToken().lexeme == "int"){
+            lexer.next();
+            if(lexer.currentToken().lexeme != ")"){
+                throw BuildError({")"},lexer.currentToken());
+            }
+            lexer.next();
+            SyntaxerNode* cur = Expr();
+            if(all.back().second != 0 || all.back().first == Types::VOID){
+                throw "Incorrect type(can not do cast)";
+            }
+            all.pop_back();
+            all.push_back({Types::INT,0});
+            poliz.AddEl({POLIZ_Element::TO_INT,""});
+            return cur;
+        }else if(lexer.currentToken().lexeme == "double"){
+            lexer.next();
+            if(lexer.currentToken().lexeme != ")"){
+                throw BuildError({")"},lexer.currentToken());
+            }
+            lexer.next();
+            SyntaxerNode* cur = Expr();
+            if(all.back().second != 0 || all.back().first == Types::VOID){
+                throw "Incorrect type(can not do cast)";
+            }
+            poliz.AddEl({POLIZ_Element::TO_DOUBLE,""});
+            all.pop_back();
+            all.push_back({Types::DOUBLE,0});
+            return cur;
+        }else if(lexer.currentToken().lexeme == "bool"){
+            lexer.next();
+            if(lexer.currentToken().lexeme != ")"){
+                throw BuildError({")"},lexer.currentToken());
+            }
+            lexer.next();
+            SyntaxerNode* cur = Expr(); 
+            if(all.back().second != 0 || all.back().first == Types::VOID){
+                throw "Incorrect type(can not do cast)";
+            }
+            all.pop_back();
+            all.push_back({Types::BOOL,0});
+            poliz.AddEl({POLIZ_Element::TO_BOOL,""});
+            return cur;
+        }else if(lexer.currentToken().lexeme == "char"){
+            lexer.next();
+            if(lexer.currentToken().lexeme != ")"){
+                throw BuildError({")"},lexer.currentToken());
+            }
+            lexer.next();
+            SyntaxerNode* cur = Expr();
+            if(all.back().second != 0 || all.back().first == Types::VOID){
+                throw "Incorrect type(can not do cast)";
+            }
+            all.pop_back();
+            all.push_back({Types::CHAR,0});
+            poliz.AddEl({POLIZ_Element::TO_CHAR,""});
+            return cur;
+        }
+    
         SyntaxerNode* cur = Expr();
         if(lexer.currentToken().lexeme != ")"){
             throw BuildError({")"},lexer.currentToken());
@@ -996,7 +1056,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
                 lexer.next();
             }
             if(was != cnt){
-                throw "Incorrect size of array " + name;
+                throw "You can not use array in expressions " + name;
             }
             poliz.AddEl({POLIZ_Element::INT,std::to_string(Give(name)->GiveOffset())});
             poliz.AddEl({POLIZ_Element::OPERATION,"+"});
@@ -1060,7 +1120,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
     }
     if(lexer.currentToken().type == Token::Type::FloatLiteral){
         all.push_back({Types::DOUBLE,0});
-        poliz.AddEl({POLIZ_Element::INT,lexer.currentToken().lexeme});
+        poliz.AddEl({POLIZ_Element::DOUBLE,lexer.currentToken().lexeme});
     }
 
     lexer.next();
@@ -2007,6 +2067,10 @@ std::string to_string(POLIZ_Element e) {
         case POLIZ_Element::UNARY_OPERATION:  return "UNARY_OPERATION";
         case POLIZ_Element::CALL_PRINT:       return "CALL_PRINT";
         case POLIZ_Element::CALL_READ:        return "CALL_READ";
+        case POLIZ_Element::TO_BOOL:          return "TO_BOOL";
+        case POLIZ_Element::TO_CHAR:          return "TO_CHAR";
+        case POLIZ_Element::TO_DOUBLE:        return "TO_DOUBLE";
+        case POLIZ_Element::TO_INT:           return "TO_INT";
         default:                              return "UNKNOWN";
     }
 }

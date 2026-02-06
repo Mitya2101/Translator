@@ -24,6 +24,11 @@ enum class POLIZ_Element{
     UNARY_OPERATION,
     CALL_PRINT,
     CALL_READ,
+
+    TO_DOUBLE,
+    TO_INT,
+    TO_CHAR,
+    TO_BOOL
 };
 
 

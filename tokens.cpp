@@ -2,7 +2,6 @@
 
 std::string Token::typeToString() const {
     using T = Type;
-
     switch (type) {
         case T::Identifier:      return "Identifier";
         case T::IntegerLiteral:  return "IntegerLiteral";
@@ -13,11 +12,10 @@ std::string Token::typeToString() const {
         case T::KwInt:           return "KwInt";
         case T::KwChar:          return "KwChar";
         case T::KwBool:          return "KwBool";
-        case T::KwFloat:         return "KwFloat";
+        case T::KwDouble:        return "KwDouble";
         case T::KwVoid:          return "KwVoid";
-        case T::KwMain:          return "KwMain";
+
         case T::KwIf:            return "KwIf";
-        case T::KwElif:          return "KwElif";
         case T::KwElse:          return "KwElse";
         case T::KwWhile:         return "KwWhile";
         case T::KwFor:           return "KwFor";
@@ -30,29 +28,25 @@ std::string Token::typeToString() const {
         case T::KwFalse:         return "KwFalse";
 
         case T::Operator:        return "Operator";
+        case T::Separator:       return "Separator";
         case T::OpenBracket:     return "OpenBracket";
         case T::CloseBracket:    return "CloseBracket";
-        case T::Separator:       return "Separator";
 
         case T::EndOfFile:       return "EndOfFile";
     }
-
     return "Unknown";
 }
 
 std::string Token::toString() const {
-    std::string repr;
-
-    repr.reserve(32 + lexeme.size());
-
-    repr += typeToString();
-    repr += "('";
-    repr += lexeme;
-    repr += "', line=";
-    repr += std::to_string(pos.line);
-    repr += ", col=";
-    repr += std::to_string(pos.column);
-    repr += ")";
-
-    return repr;
+    std::string s;
+    s.reserve(32 + lexeme.size());
+    s += typeToString();
+    s += "('";
+    s += lexeme;
+    s += "', line=";
+    s += std::to_string(pos.line);
+    s += ", col=";
+    s += std::to_string(pos.column);
+    s += ")";
+    return s;
 }

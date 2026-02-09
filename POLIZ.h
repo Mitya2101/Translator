@@ -46,13 +46,13 @@ public:
         poliz_.push_back(s);
     }
 
-    std::pair<POLIZ_Element,std::string> GiveEl(int ind){
+    std::pair<POLIZ_Element,std::string> GiveEl(int ind) const {
         if(poliz_.size() <= ind || ind < 0){
             throw "Inccoect index";
         }
         return poliz_[ind];
     }
-    int GiveSize(){
+    int GiveSize() const {
         return poliz_.size();
     }
 };

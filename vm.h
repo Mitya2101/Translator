@@ -5,6 +5,7 @@
 #include "types.h"
 
 #include <cstdint>
+#include <cstring>
 #include <optional>
 #include <string>
 #include <variant>
@@ -14,12 +15,8 @@ class PolizVm {
 public:
     PolizVm(const POLIZ& code, const TFunc& funcs);
 
-    // Выполнить начиная с 0 (если в файле есть top-level код)
-    void run();
-
-    // Если функция main существует — выполнить её,
-    // иначе run()
-    void runAuto();
+    void run();      // execute top-level code
+    void runAuto();  // execute main() if exists, else run()
 
 private:
     struct Address {
@@ -27,12 +24,12 @@ private:
         Types type = Types::INT;
     };
 
-    using Value = std::variant<std::int32_t, double, char, bool, std::string, Address>;
+    using Value = std::variant<std::int32_t, double, char, bool, Address>;
 
     struct Frame {
         std::size_t bp = 0;
         std::size_t sp = 0;
-        std::size_t paramBytes = 0; // зона параметров: там лежат адреса (int)
+        std::size_t paramBytes = 0; // bytes reserved for parameter-pointer slots
     };
 
     const POLIZ& code_;

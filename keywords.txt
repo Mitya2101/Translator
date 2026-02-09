@@ -2,13 +2,13 @@ int
 char
 bool
 double
-float
 void
 if
-elif
 else
 while
 for
 return
 break
 continue
+print
+read

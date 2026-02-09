@@ -4,108 +4,77 @@
 #include "TFunc.h"
 #include "types.h"
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-#include <variant>
-#include <stdexcept>
 #include <cstdint>
+#include <cstring>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
 
-class RuntimeError : public std::runtime_error {
+class PolizVm {
 public:
-    explicit RuntimeError(const std::string& msg) : std::runtime_error(msg) {}
-};
+    PolizVm(const POLIZ& code, const TFunc& funcs);
 
-struct Address {
-    std::int64_t offset = 0;
-};
-
-enum class VKind { Int, Double, Bool, Char, String, Void };
-
-struct Value {
-    VKind kind = VKind::Void;
-    std::variant<std::int64_t, double, bool, char, std::string> data;
-
-    static Value makeInt(std::int64_t v) { return {VKind::Int, v}; }
-    static Value makeDouble(double v) { return {VKind::Double, v}; }
-    static Value makeBool(bool v) { return {VKind::Bool, v}; }
-    static Value makeChar(char v) { return {VKind::Char, v}; }
-    static Value makeString(std::string v) { return {VKind::String, std::move(v)}; }
-    static Value makeVoid() { return {VKind::Void, 0LL}; }
-};
-
-using StackItem = std::variant<Value, Address>;
-
-class VM {
-public:
-    VM(const POLIZ& poliz, const TFunc& funcs);
-
-    void run();
-    void setTrace(bool on) { trace_ = on; }
+    void run();      // execute top-level code
+    void runAuto();  // execute main() if exists, else run()
 
 private:
-    struct Cell {
-        bool is_ref = false;     // reference cell stores a target address
-        bool initialized = false;
-
-        VKind kind = VKind::Void;
-        std::variant<std::int64_t, double, bool, char, std::string> data;
-
-        std::int64_t ref_target = 0; // where reference points
-    };
-
-    struct ParamMeta {
-        std::int64_t offset = 0; // where param cell lives (it is a reference cell)
+    struct Address {
+        std::size_t abs = 0;
         Types type = Types::INT;
     };
 
-    struct FuncMeta {
-        int entry_after_alloc = 0; // what you store in FUNCTION_ADRESS
-        int alloc_ip = 0;          // entry_after_alloc - 1 (ALLOCATE just before body)
-        int end_ip = 0;            // ip right after FREE (end label)
-        Types ret = Types::VOID;
-        std::vector<ParamMeta> params;
-    };
+    using Value = std::variant<std::int32_t, double, char, bool, Address>;
 
     struct Frame {
-        int return_ip = 0;
-        int end_ip = 0;
-        std::int64_t sp_base = 0;
-        std::size_t eval_base = 0;
-        Types ret = Types::VOID;
+        std::size_t bp = 0;
+        std::size_t sp = 0;
+        std::size_t paramBytes = 0; // bytes reserved for parameter-pointer slots
     };
 
-    const POLIZ& poliz_;
+    const POLIZ& code_;
     const TFunc& funcs_;
-    std::unordered_map<int, FuncMeta> fmeta_;
 
-    int ip_ = 0;
-    std::int64_t sp_ = 0;
-    std::vector<Frame> call_stack_;
-    std::vector<StackItem> eval_;
-    std::unordered_map<std::int64_t, Cell> mem_;
+    std::vector<std::uint8_t> mem_;
+    std::vector<Frame> frames_;
 
-    bool trace_ = false;
+private:
+    static std::int64_t toI64(const std::string& s);
+    static char decodeChar(const std::string& s);
 
-    static VKind kindFromTypes(Types t);
+    std::size_t sizeOf(Types t) const;
 
-    StackItem pop();
-    void push(StackItem x);
+    template<typename T>
+    T readPod(std::size_t abs) const {
+        T v{};
+        std::memcpy(&v, mem_.data() + abs, sizeof(T));
+        return v;
+    }
 
-    Value asValue(const StackItem& x);
-    Address asAddress(const StackItem& x);
+    template<typename T>
+    void writePod(std::size_t abs, const T& v) {
+        std::memcpy(mem_.data() + abs, &v, sizeof(T));
+    }
 
-    Value parseLiteral(const std::string& s);
+    Value eval(Value v);
+    Address asAddress(const Value& v);
 
-    Cell& ensureCell(std::int64_t addr);
-    const Cell& getCell(std::int64_t addr) const;
+    Value readTyped(const Address& a);
+    void writeTyped(const Address& a, const Value& v);
 
-    Value loadAt(std::int64_t addr);
-    void  storeAt(std::int64_t addr, const Value& v);
+    std::optional<std::string> findFuncByAddr(std::size_t addr) const;
 
-    void execOperation(const std::string& op);
-    void execUnary(const std::string& op);
+    struct FuncLayout {
+        std::size_t labelIndex = 0;
+        std::size_t allocIndex = 0;
+        std::size_t bodyStart = 0;
+        std::size_t endIp = 0;
+        std::size_t paramBytes = 0;
+    };
 
-    void execCall();
-    void maybeReturnFromFunction();
+    FuncLayout analyzeLayout(std::size_t storedAddr, const TFuncElement& f) const;
+
+    Value callFunction(std::size_t storedAddr, std::vector<Value> args);
+
+    void exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& stack);
 };

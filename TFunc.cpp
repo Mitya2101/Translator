@@ -35,28 +35,28 @@ TFuncElement::TFuncElement(std::string name,
     :name_(UpdateName(name,param_types)),
 param_types_(param_types),return_value_(return_value),create_(create),size_(size),poliz_index(poliz_index){};
 
-int TFuncElement::GivePolizIndex(){
+int TFuncElement::GivePolizIndex() const {
     return poliz_index;
 }
 
-std::string TFuncElement::GiveName(){
+std::string TFuncElement::GiveName() const {
     return name_;
 }
 
-std::vector<TIDElement*> TFuncElement::GiveParam(){
+std::vector<TIDElement*> TFuncElement::GiveParam() const {
     return param_types_;
 }
 
-Types TFuncElement::GiveReturnValue(){
+Types TFuncElement::GiveReturnValue() const {
     return return_value_;
 }
 
-SyntaxerNode* TFuncElement::GiveCreate(){
+SyntaxerNode* TFuncElement::GiveCreate() const {
     return create_;
 }
 
 
-bool TFunc::Find(std::string name){
+bool TFunc::Find(const std::string& name) const {
     for(int i =0 ;i < all_.size();i++){
         if(all_[i].GiveName() == name){
             return true;
@@ -73,18 +73,18 @@ void TFunc::CreateFunc(TFuncElement a){
 }
 
 
-TFuncElement TFunc::Get(int ind){
+TFuncElement TFunc::Get(int ind) const {
     if(all_.size() <= ind){
         throw "Get in TFunc";
     }
     return all_[ind];
 }
 
-int TFuncElement::GiveArraySize(){
+int TFuncElement::GiveArraySize() const {
     return size_;
 }
 
-TFuncElement TFunc::Get(std::string name){
+TFuncElement TFunc::Get(const std::string& name) const {
     if(!Find(name)){
         throw "Such function have not exists yet";
     }
@@ -97,6 +97,6 @@ TFuncElement TFunc::Get(std::string name){
 }
 
 
-int TFunc::GiveSize(){
+int TFunc::GiveSize() const {
     return all_.size();
 }

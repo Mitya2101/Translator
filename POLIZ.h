@@ -1,11 +1,14 @@
 #pragma once
 #include<vector>
+#include <string>
 
 
-enum POLIZ_Element{
-    NUM,//
+enum class POLIZ_Element{
+    INT,//
+    CHAR,
+    BOOL,
+    DOUBLE,
     OPERATION,//
-    SYMBOL,//
     POLIZ_GO,//
     POLIZ_FGO,//
     CALL_FUNCTION,//
@@ -14,8 +17,18 @@ enum POLIZ_Element{
     POLIZ_LABEL,//
     ALLOCATE,//
     FREE,//
+    ADRESS_INT,
+    ADRESS_BOOL,
+    ADRESS_CHAR,
+    ADRESS_DOUBLE,
     UNARY_OPERATION,
-    CALL_ARRAY
+    CALL_PRINT,
+    CALL_READ,
+
+    TO_DOUBLE,
+    TO_INT,
+    TO_CHAR,
+    TO_BOOL
 };
 
 
@@ -33,13 +46,13 @@ public:
         poliz_.push_back(s);
     }
 
-    std::pair<POLIZ_Element,std::string> GiveEl(int ind){
+    std::pair<POLIZ_Element,std::string> GiveEl(int ind) const {
         if(poliz_.size() <= ind || ind < 0){
             throw "Inccoect index";
         }
         return poliz_[ind];
     }
-    int GiveSize(){
+    int GiveSize() const {
         return poliz_.size();
     }
 };

@@ -323,6 +323,8 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 } else {
                     Value offv = eval(stack.back());
                     stack.pop_back();
+                    
+
                     if (!std::holds_alternative<std::int32_t>(offv)) throw std::runtime_error("Offset must be int");
                     rel = std::get<std::int32_t>(offv);
                 }
@@ -344,6 +346,7 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 std::string op = el.second;
 
                 if (op == "=") {
+                    // std::cout<<"djf"<<std::endl;
                     Value rhs = eval(stack.back()); stack.pop_back();
                     Address lhs = asAddress(stack.back()); stack.pop_back();
                     writeTyped(lhs, rhs);
@@ -371,12 +374,15 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 bool useDouble = std::holds_alternative<double>(a) || std::holds_alternative<double>(b);
 
                 if (op == "+") {
+                    // std::cout<<getInt(a) +getInt(b)<<std::endl;
                     if (useDouble) stack.push_back(getDouble(a) + getDouble(b));
                     else stack.push_back(getInt(a) + getInt(b));
                 } else if (op == "-") {
                     if (useDouble) stack.push_back(getDouble(a) - getDouble(b));
                     else stack.push_back(getInt(a) - getInt(b));
                 } else if (op == "*") {
+                    // std::cout<<getInt(a) * getInt(b)<<std::endl;
+
                     if (useDouble) stack.push_back(getDouble(a) * getDouble(b));
                     else stack.push_back(getInt(a) * getInt(b));
                 } else if (op == "/") {

@@ -1060,17 +1060,26 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             poliz.AddEl({POLIZ_Element::OPERATION,"+"});
 
             if(help1->GiveType() == Types::INT){
+                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(int))});
+                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_INT,""});
             }
             if(help1->GiveType() == Types::CHAR){
+                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(char))});
+                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_CHAR,""});
             }
             if(help1->GiveType() == Types::DOUBLE){
+                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(double))});
+                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_DOUBLE,""});
             }
             if(help1->GiveType() == Types::BOOL){
+                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(bool))});
+                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_BOOL,""});
             }
+
            
             
             all.push_back({help1->GiveType(),was - cnt});

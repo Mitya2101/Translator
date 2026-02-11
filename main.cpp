@@ -37,6 +37,8 @@ int main(int argc, char** argv) {
         Syntaxer syn(fileName);
         syn.Start();
 
+        // syn.PrintPoliz();
+
         PolizVm vm(syn.poliz, syn.func);
         vm.runAuto(); // main() если есть, иначе выполнить POLIZ с 0
 

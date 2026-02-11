@@ -1,5 +1,11 @@
-int x = 10;
-print("hello");
-if (x > 5) {
-    x = x + 1;
+int gcd(int a, int b){
+    if(a > b){
+        return 555;
+    }else{
+        return 666;
+    }
 }
+int a = 5;
+int b = 7;
+print(gcd(a,b));
+print(gcd(b,a));

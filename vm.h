@@ -2,7 +2,6 @@
 
 #include "POLIZ.h"
 #include "TFunc.h"
-#include "types.h"
 
 #include <cstdint>
 #include <cstring>
@@ -13,10 +12,16 @@
 
 class PolizVm {
 public:
-    PolizVm(const POLIZ& code, const TFunc& funcs);
+    // VM operates on produced POLIZ and function table.
+    // We keep non-const refs because the original project API does not provide const accessors.
+    PolizVm(POLIZ& code, TFunc& funcs);
 
-    void run();      // execute top-level code
-    void runAuto();  // execute main() if exists, else run()
+    // Выполнить начиная с 0 (если в файле есть top-level код)
+    void run();
+
+    // Если функция main существует — выполнить её,
+    // иначе run()
+    void runAuto();
 
 private:
     struct Address {
@@ -24,16 +29,16 @@ private:
         Types type = Types::INT;
     };
 
-    using Value = std::variant<std::int32_t, double, char, bool, Address>;
+    using Value = std::variant<std::int32_t, double, char, bool, std::string, Address>;
 
     struct Frame {
         std::size_t bp = 0;
         std::size_t sp = 0;
-        std::size_t paramBytes = 0; // bytes reserved for parameter-pointer slots
+        std::size_t paramBytes = 0; // зона параметров: там лежат адреса (int)
     };
 
-    const POLIZ& code_;
-    const TFunc& funcs_;
+    POLIZ& code_;
+    TFunc& funcs_;
 
     std::vector<std::uint8_t> mem_;
     std::vector<Frame> frames_;
@@ -62,7 +67,7 @@ private:
     Value readTyped(const Address& a);
     void writeTyped(const Address& a, const Value& v);
 
-    std::optional<std::string> findFuncByAddr(std::size_t addr) const;
+    std::optional<std::string> findFuncByAddr(std::size_t addr);
 
     struct FuncLayout {
         std::size_t labelIndex = 0;
@@ -72,7 +77,7 @@ private:
         std::size_t paramBytes = 0;
     };
 
-    FuncLayout analyzeLayout(std::size_t storedAddr, const TFuncElement& f) const;
+    FuncLayout analyzeLayout(std::size_t storedAddr, TFuncElement f);
 
     Value callFunction(std::size_t storedAddr, std::vector<Value> args);
 

@@ -14,12 +14,12 @@ private:
     SyntaxerNode* create_;
     int poliz_index;
 public:
-    std::string GiveName() const;
-    std::vector<TIDElement*> GiveParam() const;
-    Types GiveReturnValue() const;
-    int GiveArraySize() const;
-    SyntaxerNode* GiveCreate() const;
-    int GivePolizIndex() const;
+    std::string GiveName();
+    std::vector<TIDElement*> GiveParam();
+    Types GiveReturnValue();
+    int GiveArraySize();
+    SyntaxerNode* GiveCreate();
+    int GivePolizIndex();
     TFuncElement(std::string name,
         std::vector<TIDElement*> param_types,
         Types return_value,SyntaxerNode* create_,int size,int poliz_index);
@@ -30,8 +30,8 @@ private:
     std::vector<TFuncElement> all_;
 public:
     void CreateFunc(TFuncElement a);
-    bool Find(const std::string& name) const;
-    TFuncElement Get(const std::string& name) const;
-    TFuncElement Get(int ind) const;
-    int GiveSize() const;
+    bool Find(std::string name);
+    TFuncElement Get(std::string name);
+    TFuncElement Get(int ind);
+    int GiveSize();
 };

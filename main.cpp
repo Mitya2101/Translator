@@ -1,3 +1,4 @@
+//#define _GLIBCXX_DEBUG
 #include "Syntaxer.h"
 #include "vm.h"
 

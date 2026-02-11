@@ -1,11 +1,21 @@
-#pragma once
+#ifndef LEXER_TOKENS_H
+#define LEXER_TOKENS_H
+
 #include <string>
-#include "types.h"
 
 struct Position {
-    int line = 1;
+    int line  = 1;
     int column = 0;
 };
+
+enum class Types{
+    VOID,
+    INT,
+    DOUBLE,
+    CHAR,
+    BOOL,
+};
+
 
 struct Token {
     enum class Type {
@@ -18,10 +28,11 @@ struct Token {
         KwInt,
         KwChar,
         KwBool,
-        KwDouble,
+        KwFloat,
         KwVoid,
-
+        KwMain,
         KwIf,
+        KwElif,
         KwElse,
         KwWhile,
         KwFor,
@@ -33,10 +44,10 @@ struct Token {
         KwTrue,
         KwFalse,
 
-        Operator,       // + - * / % = == != < <= > >= && || , etc. (lexeme stores exact text)
-        Separator,      // ; ,
-        OpenBracket,    // ( { [
-        CloseBracket,   // ) } ]
+        Operator,
+        OpenBracket,
+        CloseBracket,
+        Separator,
 
         EndOfFile
     };
@@ -48,3 +59,5 @@ struct Token {
     std::string typeToString() const;
     std::string toString() const;
 };
+
+#endif

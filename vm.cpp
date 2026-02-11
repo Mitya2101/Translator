@@ -1,9 +1,12 @@
 #include "vm.h"
 
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
-PolizVm::PolizVm(const POLIZ& code, const TFunc& funcs)
+
+
+PolizVm::PolizVm(POLIZ& code, TFunc& funcs)
     : code_(code), funcs_(funcs) {
     frames_.push_back(Frame{0, 0, 0});
 }
@@ -11,6 +14,17 @@ PolizVm::PolizVm(const POLIZ& code, const TFunc& funcs)
 std::int64_t PolizVm::toI64(const std::string& s) {
     if (s.empty()) return 0;
     return std::stoll(s);
+}
+
+std::size_t PolizVm::sizeOf(Types t) const {
+    switch (t) {
+        case Types::INT: return sizeof(int);
+        case Types::DOUBLE: return sizeof(double);
+        case Types::BOOL: return sizeof(bool);
+        case Types::CHAR: return sizeof(char);
+        case Types::VOID: return 0;
+    }
+    return 0;
 }
 
 char PolizVm::decodeChar(const std::string& s) {
@@ -30,17 +44,6 @@ char PolizVm::decodeChar(const std::string& s) {
     return s[0];
 }
 
-std::size_t PolizVm::sizeOf(Types t) const {
-    switch (t) {
-        case Types::INT: return sizeof(int);
-        case Types::DOUBLE: return sizeof(double);
-        case Types::BOOL: return sizeof(bool);
-        case Types::CHAR: return sizeof(char);
-        case Types::VOID: return 0;
-    }
-    return 0;
-}
-
 PolizVm::Value PolizVm::eval(Value v) {
     if (std::holds_alternative<Address>(v)) {
         return readTyped(std::get<Address>(v));
@@ -50,13 +53,13 @@ PolizVm::Value PolizVm::eval(Value v) {
 
 PolizVm::Address PolizVm::asAddress(const Value& v) {
     if (!std::holds_alternative<Address>(v)) {
-        throw std::runtime_error("VM: expected address");
+        throw std::runtime_error("Expected address on stack");
     }
     return std::get<Address>(v);
 }
 
 PolizVm::Value PolizVm::readTyped(const Address& a) {
-    if (a.abs + sizeOf(a.type) > mem_.size()) throw std::runtime_error("VM: memory read OOB");
+    if (a.abs + sizeOf(a.type) > mem_.size()) throw std::runtime_error("Memory read OOB");
 
     switch (a.type) {
         case Types::INT: {
@@ -82,7 +85,7 @@ PolizVm::Value PolizVm::readTyped(const Address& a) {
 }
 
 void PolizVm::writeTyped(const Address& a, const Value& v) {
-    if (a.abs + sizeOf(a.type) > mem_.size()) throw std::runtime_error("VM: memory write OOB");
+    if (a.abs + sizeOf(a.type) > mem_.size()) throw std::runtime_error("Memory write OOB");
 
     Value vv = eval(v);
 
@@ -93,7 +96,7 @@ void PolizVm::writeTyped(const Address& a, const Value& v) {
             else if (std::holds_alternative<bool>(vv)) x = std::get<bool>(vv) ? 1 : 0;
             else if (std::holds_alternative<char>(vv)) x = (int)std::get<char>(vv);
             else if (std::holds_alternative<double>(vv)) x = (int)std::get<double>(vv);
-            else throw std::runtime_error("VM: bad type for INT store");
+            else throw std::runtime_error("Bad type for INT store");
             writePod<int>(a.abs, x);
             return;
         }
@@ -101,7 +104,7 @@ void PolizVm::writeTyped(const Address& a, const Value& v) {
             double d = 0.0;
             if (std::holds_alternative<double>(vv)) d = std::get<double>(vv);
             else if (std::holds_alternative<std::int32_t>(vv)) d = (double)std::get<std::int32_t>(vv);
-            else throw std::runtime_error("VM: bad type for DOUBLE store");
+            else throw std::runtime_error("Bad type for DOUBLE store");
             writePod<double>(a.abs, d);
             return;
         }
@@ -109,7 +112,7 @@ void PolizVm::writeTyped(const Address& a, const Value& v) {
             bool b = false;
             if (std::holds_alternative<bool>(vv)) b = std::get<bool>(vv);
             else if (std::holds_alternative<std::int32_t>(vv)) b = (std::get<std::int32_t>(vv) != 0);
-            else throw std::runtime_error("VM: bad type for BOOL store");
+            else throw std::runtime_error("Bad type for BOOL store");
             writePod<bool>(a.abs, b);
             return;
         }
@@ -117,7 +120,7 @@ void PolizVm::writeTyped(const Address& a, const Value& v) {
             char c = 0;
             if (std::holds_alternative<char>(vv)) c = std::get<char>(vv);
             else if (std::holds_alternative<std::int32_t>(vv)) c = (char)std::get<std::int32_t>(vv);
-            else throw std::runtime_error("VM: bad type for CHAR store");
+            else throw std::runtime_error("Bad type for CHAR store");
             writePod<char>(a.abs, c);
             return;
         }
@@ -126,16 +129,20 @@ void PolizVm::writeTyped(const Address& a, const Value& v) {
     }
 }
 
-std::optional<std::string> PolizVm::findFuncByAddr(std::size_t addr) const {
+std::optional<std::string> PolizVm::findFuncByAddr(std::size_t addr) {
     for (int i = 0; i < funcs_.GiveSize(); ++i) {
-        TFuncElement f = funcs_.Get(i);
+        auto f = funcs_.Get(i);
         if ((std::size_t)f.GivePolizIndex() == addr) return f.GiveName();
     }
     return std::nullopt;
 }
 
-PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, const TFuncElement& f) const {
+PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement f) {
     FuncLayout L{};
+
+    // Два варианта адреса:
+    // 1) storedAddr указывает на POLIZ_LABEL (перед телом функции)
+    // 2) storedAddr указывает на первую инструкцию тела (после ALLOCATE)
 
     auto e0 = code_.GiveEl((int)storedAddr);
 
@@ -154,7 +161,8 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, const TFuncEl
     auto label = code_.GiveEl((int)L.labelIndex);
     L.endIp = (std::size_t)toI64(label.second);
 
-    const auto params = f.GiveParam();
+    // param area: параметры лежат как int-адреса с шагом sizeof(int)
+    const auto& params = f.GiveParam();
     if (!params.empty()) {
         int maxOff = 0;
         for (auto* p : params) maxOff = std::max(maxOff, p->GiveOffset());
@@ -166,25 +174,20 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, const TFuncEl
 
 PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> args) {
     auto nameOpt = findFuncByAddr(storedAddr);
-    if (!nameOpt) throw std::runtime_error("VM: unknown function address " + std::to_string(storedAddr));
+    if (!nameOpt) throw std::runtime_error("Unknown function address: " + std::to_string(storedAddr));
     std::string fname = *nameOpt;
 
-    // Your function table stores "name type1 type2 ..." in GiveName().
-    // Here we search by exact name.
-    int idx = -1;
-    for (int i = 0; i < funcs_.GiveSize(); ++i) {
-        TFuncElement f = funcs_.Get(i);
-        if (f.GiveName() == fname) { idx = i; break; }
+    if (!funcs_.Find(fname)) {
+        throw std::runtime_error("Unknown function: " + fname);
     }
-    if (idx < 0) throw std::runtime_error("VM: function not found " + fname);
+    auto f = funcs_.Get(fname);
 
-    TFuncElement f = funcs_.Get(idx);
     FuncLayout L = analyzeLayout(storedAddr, f);
-
     auto allocEl = code_.GiveEl((int)L.allocIndex);
     std::size_t bytes = (std::size_t)toI64(allocEl.second);
 
-    Frame caller = frames_.back();
+    Frame& caller = frames_.back();
+
     Frame callee;
     callee.bp = caller.sp;
     callee.sp = caller.sp;
@@ -193,24 +196,26 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     mem_.resize(callee.sp + bytes);
     callee.sp += bytes;
 
+    // кладём frame
     frames_.push_back(callee);
 
-    auto params = f.GiveParam();
+    // записываем адреса параметров (по ссылке)
+    const auto& params = f.GiveParam();
     if (params.size() != args.size()) {
-        throw std::runtime_error("VM: bad arg count for " + fname);
+        throw std::runtime_error("Bad arg count for function " + fname);
     }
 
-    // params are "by reference": in param slots we store int pointer to actual data
     for (std::size_t i = 0; i < params.size(); ++i) {
         int off = params[i]->GiveOffset();
         std::size_t slot = frames_.back().bp + (std::size_t)off;
 
+        // если аргумент — адрес → пишем его
         if (std::holds_alternative<Address>(args[i])) {
-            Address a = std::get<Address>(args[i]);
+            auto a = std::get<Address>(args[i]);
             int ptr = (int)a.abs;
             writePod<int>(slot, ptr);
         } else {
-            // if a value is passed, create a temp cell in callee memory
+            // если аргумент — значение → создаём временную ячейку в памяти callee
             Types t = params[i]->GiveType();
             std::size_t tmpAddr = frames_.back().sp;
             mem_.resize(tmpAddr + sizeOf(t));
@@ -230,10 +235,9 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     Value ret = std::int32_t(0);
     if (!localStack.empty()) ret = eval(localStack.back());
 
-    // destroy callee frame
-    std::size_t restore = frames_.back().bp;
+    // гарантированно очищаем память функции
+    mem_.resize(frames_.back().bp);
     frames_.pop_back();
-    mem_.resize(restore);
 
     return ret;
 }
@@ -241,24 +245,35 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
 void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& stack) {
     std::size_t ip = ipBegin;
 
-    auto asInt = [&](const Value& v)->std::int32_t{
-        if (std::holds_alternative<std::int32_t>(v)) return std::get<std::int32_t>(v);
-        if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1 : 0;
-        if (std::holds_alternative<char>(v)) return (std::int32_t)std::get<char>(v);
-        if (std::holds_alternative<double>(v)) return (std::int32_t)std::get<double>(v);
-        throw std::runtime_error("VM: int conversion failed");
+    // Debug helpers (local): show what types are currently on the VM stack when it crashes.
+    auto valueTypeName = [](const Value& v) -> const char* {
+        if (std::holds_alternative<std::int32_t>(v)) return "int";
+        if (std::holds_alternative<double>(v)) return "double";
+        if (std::holds_alternative<char>(v)) return "char";
+        if (std::holds_alternative<bool>(v)) return "bool";
+        if (std::holds_alternative<std::string>(v)) return "string";
+        if (std::holds_alternative<Address>(v)) return "address";
+        return "?";
     };
-
-    auto asDouble = [&](const Value& v)->double{
-        if (std::holds_alternative<double>(v)) return std::get<double>(v);
-        if (std::holds_alternative<std::int32_t>(v)) return (double)std::get<std::int32_t>(v);
-        throw std::runtime_error("VM: double conversion failed");
+    auto stackTypesDump = [&](std::size_t maxN = 8) -> std::string {
+        std::string out;
+        out += "[";
+        std::size_t n = stack.size();
+        std::size_t begin = (n > maxN) ? (n - maxN) : 0;
+        if (begin != 0) out += "..., ";
+        for (std::size_t i = begin; i < n; ++i) {
+            if (i != begin) out += ", ";
+            out += valueTypeName(stack[i]);
+        }
+        out += "]";
+        return out;
     };
 
     while (ip < ipEnd) {
         auto el = code_.GiveEl((int)ip);
 
-        switch (el.first) {
+        try {
+            switch (el.first) {
             case POLIZ_Element::INT:
                 stack.push_back((std::int32_t)toI64(el.second));
                 break;
@@ -287,7 +302,7 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
             case POLIZ_Element::FREE: {
                 std::size_t n = (std::size_t)toI64(el.second);
                 Frame& fr = frames_.back();
-                if (fr.sp < fr.bp + n) throw std::runtime_error("VM: bad FREE");
+                if (fr.sp < fr.bp + n) throw std::runtime_error("Bad FREE");
                 fr.sp -= n;
                 mem_.resize(fr.sp);
                 break;
@@ -308,12 +323,14 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 } else {
                     Value offv = eval(stack.back());
                     stack.pop_back();
-                    rel = asInt(offv);
+                    if (!std::holds_alternative<std::int32_t>(offv)) throw std::runtime_error("Offset must be int");
+                    rel = std::get<std::int32_t>(offv);
                 }
 
                 Frame& fr = frames_.back();
                 std::size_t abs = fr.bp + (std::size_t)rel;
 
+                // параметр → в ячейке лежит указатель (int)
                 if ((std::size_t)rel < fr.paramBytes) {
                     int ptr = readPod<int>(abs);
                     abs = (std::size_t)ptr;
@@ -337,38 +354,56 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 Value b = eval(stack.back()); stack.pop_back();
                 Value a = eval(stack.back()); stack.pop_back();
 
+                auto getInt = [](const Value& v)->std::int32_t{
+                    if (std::holds_alternative<std::int32_t>(v)) return std::get<std::int32_t>(v);
+                    if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1 : 0;
+                    if (std::holds_alternative<char>(v)) return (std::int32_t)std::get<char>(v);
+                    if (std::holds_alternative<double>(v)) return (std::int32_t)std::get<double>(v);
+                    throw std::runtime_error("Bad int conversion");
+                };
+
+                auto getDouble = [](const Value& v)->double{
+                    if (std::holds_alternative<double>(v)) return std::get<double>(v);
+                    if (std::holds_alternative<std::int32_t>(v)) return (double)std::get<std::int32_t>(v);
+                    throw std::runtime_error("Bad double conversion");
+                };
+
                 bool useDouble = std::holds_alternative<double>(a) || std::holds_alternative<double>(b);
 
                 if (op == "+") {
-                    stack.push_back(useDouble ? Value(asDouble(a) + asDouble(b)) : Value(asInt(a) + asInt(b)));
+                    if (useDouble) stack.push_back(getDouble(a) + getDouble(b));
+                    else stack.push_back(getInt(a) + getInt(b));
                 } else if (op == "-") {
-                    stack.push_back(useDouble ? Value(asDouble(a) - asDouble(b)) : Value(asInt(a) - asInt(b)));
+                    if (useDouble) stack.push_back(getDouble(a) - getDouble(b));
+                    else stack.push_back(getInt(a) - getInt(b));
                 } else if (op == "*") {
-                    stack.push_back(useDouble ? Value(asDouble(a) * asDouble(b)) : Value(asInt(a) * asInt(b)));
+                    if (useDouble) stack.push_back(getDouble(a) * getDouble(b));
+                    else stack.push_back(getInt(a) * getInt(b));
                 } else if (op == "/") {
-                    stack.push_back(useDouble ? Value(asDouble(a) / asDouble(b)) : Value(asInt(a) / asInt(b)));
+                    if (useDouble) stack.push_back(getDouble(a) / getDouble(b));
+                    else stack.push_back(getInt(a) / getInt(b));
                 } else if (op == "%") {
-                    stack.push_back(Value(asInt(a) % asInt(b)));
+                    stack.push_back(getInt(a) % getInt(b));
                 } else if (op == "==") {
-                    stack.push_back(Value(asInt(a) == asInt(b)));
+                    stack.push_back(getInt(a) == getInt(b));
                 } else if (op == "!=") {
-                    stack.push_back(Value(asInt(a) != asInt(b)));
+                    stack.push_back(getInt(a) != getInt(b));
                 } else if (op == "<") {
-                    stack.push_back(Value(asInt(a) < asInt(b)));
+                    stack.push_back(getInt(a) < getInt(b));
                 } else if (op == ">") {
-                    stack.push_back(Value(asInt(a) > asInt(b)));
+                    stack.push_back(getInt(a) > getInt(b));
                 } else if (op == "<=") {
-                    stack.push_back(Value(asInt(a) <= asInt(b)));
+                    stack.push_back(getInt(a) <= getInt(b));
                 } else if (op == ">=") {
-                    stack.push_back(Value(asInt(a) >= asInt(b)));
+                    stack.push_back(getInt(a) >= getInt(b));
                 } else if (op == "&&") {
-                    stack.push_back(Value(asInt(a) && asInt(b)));
+                    stack.push_back(getInt(a) && getInt(b));
                 } else if (op == "||") {
-                    stack.push_back(Value(asInt(a) || asInt(b)));
+                    stack.push_back(getInt(a) || getInt(b));
                 } else if (op == ",") {
                     stack.push_back(b);
                 } else {
-                    throw std::runtime_error("VM: unknown op " + op);
+                    throw std::runtime_error("Unknown op: " + op);
                 }
                 break;
             }
@@ -377,45 +412,97 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 std::string op = el.second;
                 Value a = eval(stack.back()); stack.pop_back();
 
+                auto getInt = [](const Value& v)->std::int32_t{
+                    if (std::holds_alternative<std::int32_t>(v)) return std::get<std::int32_t>(v);
+                    if (std::holds_alternative<bool>(v)) return std::get<bool>(v) ? 1 : 0;
+                    if (std::holds_alternative<char>(v)) return (std::int32_t)std::get<char>(v);
+                    if (std::holds_alternative<double>(v)) return (std::int32_t)std::get<double>(v);
+                    throw std::runtime_error("Bad int conversion");
+                };
+
                 if (op == "!") {
                     bool v = false;
                     if (std::holds_alternative<bool>(a)) v = std::get<bool>(a);
-                    else v = (asInt(a) != 0);
+                    else if (std::holds_alternative<std::int32_t>(a)) v = std::get<std::int32_t>(a) != 0;
+                    else throw std::runtime_error("Bad unary !");
                     stack.push_back(!v);
                 } else if (op == "-") {
                     if (std::holds_alternative<double>(a)) stack.push_back(-std::get<double>(a));
-                    else stack.push_back(-asInt(a));
+                    else stack.push_back(-getInt(a));
                 } else if (op == "+") {
                     stack.push_back(a);
                 } else {
-                    throw std::runtime_error("VM: unknown unary op " + op);
+                    throw std::runtime_error("Unknown unary op");
                 }
                 break;
             }
 
             case POLIZ_Element::POLIZ_GO: {
-                std::size_t target = 0;
+                std::size_t target;
                 if (!el.second.empty()) target = (std::size_t)toI64(el.second);
                 else {
                     Value v = eval(stack.back()); stack.pop_back();
-                    target = (std::size_t)asInt(v);
+                    // label может приходить как int/bool/char/double (или адрес на int)
+                    auto asIp = [](const Value& vv) -> std::size_t {
+                        if (std::holds_alternative<std::int32_t>(vv)) return (std::size_t)std::get<std::int32_t>(vv);
+                        if (std::holds_alternative<bool>(vv)) return (std::size_t)(std::get<bool>(vv) ? 1 : 0);
+                        if (std::holds_alternative<char>(vv)) return (std::size_t)(unsigned char)std::get<char>(vv);
+                        if (std::holds_alternative<double>(vv)) return (std::size_t)std::get<double>(vv);
+                        if (std::holds_alternative<std::string>(vv)) return (std::size_t)PolizVm::toI64(std::get<std::string>(vv));
+                        throw std::runtime_error("GO expects label");
+                    };
+                    target = asIp(v);
                 }
                 ip = target;
                 continue;
             }
 
             case POLIZ_Element::POLIZ_FGO: {
-                Value cond = eval(stack.back()); stack.pop_back();
-                bool c = false;
-                if (std::holds_alternative<bool>(cond)) c = std::get<bool>(cond);
-                else c = (asInt(cond) != 0);
+                // В ПОЛИЗЕ условного перехода у вас порядок такой:
+                //   <cond_expr> POLIZ_LABEL <target> POLIZ_FGO
+                // т.е. на стеке сверху лежит label, под ним условие.
+
+                auto asIp = [](const Value& vv) -> std::size_t {
+                    if (std::holds_alternative<std::int32_t>(vv)) return (std::size_t)std::get<std::int32_t>(vv);
+                    if (std::holds_alternative<bool>(vv)) return (std::size_t)(std::get<bool>(vv) ? 1 : 0);
+                    if (std::holds_alternative<char>(vv)) return (std::size_t)(unsigned char)std::get<char>(vv);
+                    if (std::holds_alternative<double>(vv)) return (std::size_t)std::get<double>(vv);
+                    if (std::holds_alternative<std::string>(vv)) return (std::size_t)PolizVm::toI64(std::get<std::string>(vv));
+                    throw std::runtime_error("FGO expects label");
+                };
 
                 std::size_t target = 0;
-                if (!el.second.empty()) target = (std::size_t)toI64(el.second);
-                else {
-                    Value v = eval(stack.back()); stack.pop_back();
-                    target = (std::size_t)asInt(v);
+                if (!el.second.empty()) {
+                    // Переход задан в аргументе операции, на стеке только условие.
+                    target = (std::size_t)toI64(el.second);
+
+                    Value condV = eval(stack.back());
+                    stack.pop_back();
+                    bool c = false;
+                    if (std::holds_alternative<bool>(condV)) c = std::get<bool>(condV);
+                    else if (std::holds_alternative<std::int32_t>(condV)) c = (std::get<std::int32_t>(condV) != 0);
+                    else if (std::holds_alternative<char>(condV)) c = (std::get<char>(condV) != 0);
+                    else if (std::holds_alternative<double>(condV)) c = (std::get<double>(condV) != 0.0);
+                    else throw std::runtime_error("Bad FGO condition type");
+
+                    if (!c) { ip = target; continue; }
+                    break;
                 }
+
+                // el.second пустой: сначала снимаем label, затем условие.
+                Value labelV = eval(stack.back());
+                stack.pop_back();
+                target = asIp(labelV);
+
+                Value condV = eval(stack.back());
+                stack.pop_back();
+
+                bool c = false;
+                if (std::holds_alternative<bool>(condV)) c = std::get<bool>(condV);
+                else if (std::holds_alternative<std::int32_t>(condV)) c = (std::get<std::int32_t>(condV) != 0);
+                else if (std::holds_alternative<char>(condV)) c = (std::get<char>(condV) != 0);
+                else if (std::holds_alternative<double>(condV)) c = (std::get<double>(condV) != 0.0);
+                else throw std::runtime_error("Bad FGO condition type");
 
                 if (!c) { ip = target; continue; }
                 break;
@@ -426,16 +513,24 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 break;
 
             case POLIZ_Element::CALL_FUNCTION: {
-                int argc = (int)toI64(el.second);
+                // Синтаксер НЕ записывает количество аргументов в el.second.
+                // В POLIZ лежит: <args...> FUNCTION_ADRESS <addr> CALL_FUNCTION
+                // Поэтому читаем адрес функции со стека, затем узнаём argc из таблицы функций.
+                Value addrV = eval(stack.back());
+                stack.pop_back();
+                if (!std::holds_alternative<std::int32_t>(addrV)) throw std::runtime_error("Bad function address");
+                std::size_t faddr = (std::size_t)std::get<std::int32_t>(addrV);
 
+                auto nameOpt = findFuncByAddr(faddr);
+                if (!nameOpt) throw std::runtime_error("Unknown function address: " + std::to_string(faddr));
+                auto f = funcs_.Get(*nameOpt);
+
+                int argc = (int)f.GiveParam().size();
                 std::vector<Value> args(argc);
                 for (int i = argc - 1; i >= 0; --i) {
-                    args[i] = stack.back();
+                    args[i] = eval(stack.back());
                     stack.pop_back();
                 }
-
-                Value addrV = eval(stack.back()); stack.pop_back();
-                std::size_t faddr = (std::size_t)asInt(addrV);
 
                 Value ret = callFunction(faddr, args);
                 stack.push_back(ret);
@@ -443,19 +538,20 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
             }
 
             case POLIZ_Element::CALL_PRINT: {
-                int argc = (int)toI64(el.second);
-                std::vector<Value> args(argc);
-                for (int i = argc - 1; i >= 0; --i) { args[i] = eval(stack.back()); stack.pop_back(); }
+                // CALL_PRINT генерируется синтаксером для идентификатора print(...)
+                // и ВСЕГДА имеет ровно один аргумент (по таблице встроенных функций).
+                Value v = eval(stack.back());
+                stack.pop_back();
 
-                for (int i = 0; i < argc; ++i) {
-                    if (std::holds_alternative<std::int32_t>(args[i])) std::cout << std::get<std::int32_t>(args[i]);
-                    else if (std::holds_alternative<double>(args[i])) std::cout << std::get<double>(args[i]);
-                    else if (std::holds_alternative<char>(args[i])) std::cout << std::get<char>(args[i]);
-                    else if (std::holds_alternative<bool>(args[i])) std::cout << (std::get<bool>(args[i]) ? "true" : "false");
-                    else std::cout << "<?>";
-                    if (i + 1 < argc) std::cout << " ";
-                }
+                if (std::holds_alternative<std::int32_t>(v)) std::cout << std::get<std::int32_t>(v);
+                else if (std::holds_alternative<double>(v)) std::cout << std::get<double>(v);
+                else if (std::holds_alternative<char>(v)) std::cout << std::get<char>(v);
+                else if (std::holds_alternative<bool>(v)) std::cout << (std::get<bool>(v) ? "true" : "false");
+                else if (std::holds_alternative<std::string>(v)) std::cout << std::get<std::string>(v);
+                else std::cout << "<?>";
+
                 std::cout << "\n";
+                // void-значение
                 stack.push_back(std::int32_t(0));
                 break;
             }
@@ -485,8 +581,22 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 return;
 
             default:
-                // TO_INT/TO_DOUBLE/TO_CHAR/TO_BOOL can be added later if needed
+                // TO_INT/TO_DOUBLE/TO_CHAR/TO_BOOL пока можно не реализовывать,
+                // если синтаксер уже приводит типы заранее.
                 break;
+            }
+        }
+        catch (const std::bad_variant_access&) {
+            std::cerr << "VM bad_variant_access at ip=" << ip
+                      << " op=" << (int)el.first << " arg=\"" << el.second << "\""
+                      << " stack=" << stackTypesDump() << "\n";
+            throw;
+        }
+        catch (const std::exception& e) {
+            std::cerr << "VM exception at ip=" << ip
+                      << " op=" << (int)el.first << " arg=\"" << el.second << "\""
+                      << " stack=" << stackTypesDump() << " : " << e.what() << "\n";
+            throw;
         }
 
         ++ip;
@@ -499,23 +609,12 @@ void PolizVm::run() {
 }
 
 void PolizVm::runAuto() {
-    // if any function name contains "main" as first word, run it
-    int mainIdx = -1;
-    for (int i = 0; i < funcs_.GiveSize(); ++i) {
-        TFuncElement f = funcs_.Get(i);
-        const std::string n = f.GiveName();
-        if (n == "main" || (n.size() >= 4 && n.substr(0, 4) == "main")) {
-            mainIdx = i;
-            break;
-        }
-    }
-
-    if (mainIdx >= 0) {
-        TFuncElement f = funcs_.Get(mainIdx);
+    // если main существует — вызовем её
+    if (funcs_.Find("main")) {
+        auto f = funcs_.Get("main");
         std::size_t addr = (std::size_t)f.GivePolizIndex();
-        (void)callFunction(addr, {});
-        return;
+        callFunction(addr, {});
+    } else {
+        run();
     }
-
-    run();
 }

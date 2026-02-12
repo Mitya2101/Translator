@@ -4,19 +4,19 @@
 
 
 enum class POLIZ_Element{
-    INT,
+    INT,//
     CHAR,
     BOOL,
     DOUBLE,
-    OPERATION,
-    POLIZ_GO,
-    POLIZ_FGO,
-    CALL_FUNCTION,
-    FUNCTION_ADRESS,
-    END_OF_PROGRAM,
-    POLIZ_LABEL,
-    ALLOCATE,
-    FREE,
+    OPERATION,//
+    POLIZ_GO,//
+    POLIZ_FGO,//
+    CALL_FUNCTION,//
+    FUNCTION_ADRESS,//
+    END_OF_PROGRAM,//
+    POLIZ_LABEL,//
+    ALLOCATE,//
+    FREE,//
     ADRESS_INT,
     ADRESS_BOOL,
     ADRESS_CHAR,
@@ -37,7 +37,7 @@ class POLIZ{
 public:
     void UpdateEl(std::pair<POLIZ_Element,std::string> s,int ind){
         if(poliz_.size() <= ind || ind < 0){
-            throw "Inccorect index";
+            throw "Inccoect index";
         }
         poliz_[ind] = s;
     }
@@ -48,7 +48,7 @@ public:
 
     std::pair<POLIZ_Element,std::string> GiveEl(int ind){
         if(poliz_.size() <= ind || ind < 0){
-            throw "Inccorect index";
+            throw "Inccoect index";
         }
         return poliz_[ind];
     }

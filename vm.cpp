@@ -8,7 +8,7 @@
 
 PolizVm::PolizVm(POLIZ& code, TFunc& funcs)
     : code_(code), funcs_(funcs) {
-    frames_.push_back(Frame{0, 0, 0});
+    frames_.push_back(Frame{0, 0, {}});
 }
 
 std::int64_t PolizVm::toI64(const std::string& s) {
@@ -59,7 +59,14 @@ PolizVm::Address PolizVm::asAddress(const Value& v) {
 }
 
 PolizVm::Value PolizVm::readTyped(const Address& a) {
-    if (a.abs + sizeOf(a.type) > mem_.size()) throw std::runtime_error("Memory read OOB");
+    const std::size_t need = a.abs + sizeOf(a.type);
+    if (need > mem_.size()) {
+        throw std::runtime_error(
+            "Memory read OOB (abs=" + std::to_string(a.abs) +
+            ", type=" + std::to_string((int)a.type) +
+            ", need=" + std::to_string(need) +
+            ", mem=" + std::to_string(mem_.size()) + ")");
+    }
 
     switch (a.type) {
         case Types::INT: {
@@ -161,12 +168,18 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement 
     auto label = code_.GiveEl((int)L.labelIndex);
     L.endIp = (std::size_t)toI64(label.second);
 
-    // param area: параметры лежат как int-адреса с шагом sizeof(int)
+    // Parameters: in this project scalars are stored by VALUE, arrays are stored as pointers.
+    // Remember which parameter offsets are pointers so ADRESS_* can dereference only those.
     const auto& params = f.GiveParam();
-    if (!params.empty()) {
-        int maxOff = 0;
-        for (auto* p : params) maxOff = std::max(maxOff, p->GiveOffset());
-        L.paramBytes = (std::size_t)(maxOff + (int)sizeof(int));
+    for (auto* p : params) {
+        const int off = p->GiveOffset();
+        // Array parameters are represented by TIDElementArray<...>
+        if (dynamic_cast<TIDElementArray<int>*>(p) ||
+            dynamic_cast<TIDElementArray<double>*>(p) ||
+            dynamic_cast<TIDElementArray<bool>*>(p) ||
+            dynamic_cast<TIDElementArray<char>*>(p)) {
+            L.ptrParamOffsets.push_back((std::size_t)off);
+        }
     }
 
     return L;
@@ -186,12 +199,38 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     auto allocEl = code_.GiveEl((int)L.allocIndex);
     std::size_t bytes = (std::size_t)toI64(allocEl.second);
 
+    // (debug prints removed)
+
+    // IMPORTANT:
+    // In this project, the compiler may emit ALLOCATE size that does NOT include
+    // the space needed for function parameters (only locals). But parameter offsets
+    // are absolute within the frame (starting from 0), so we must ensure the frame
+    // is at least large enough to store all parameters.
+    std::size_t paramBytesNeed = 0;
+    {
+        const auto& params = f.GiveParam();
+        for (auto* p : params) {
+            const int off = p->GiveOffset();
+            if (off < 0) continue;
+            std::size_t sz = sizeOf(p->GiveType());
+            // Array parameters are stored as pointers (int) in the frame.
+            if (dynamic_cast<TIDElementArray<int>*>(p) ||
+                dynamic_cast<TIDElementArray<double>*>(p) ||
+                dynamic_cast<TIDElementArray<bool>*>(p) ||
+                dynamic_cast<TIDElementArray<char>*>(p)) {
+                sz = sizeof(int);
+            }
+            paramBytesNeed = std::max(paramBytesNeed, (std::size_t)off + sz);
+        }
+    }
+    if (bytes < paramBytesNeed) bytes = paramBytesNeed;
+
     Frame& caller = frames_.back();
 
     Frame callee;
     callee.bp = caller.sp;
     callee.sp = caller.sp;
-    callee.paramBytes = L.paramBytes;
+    callee.ptrParamOffsets = L.ptrParamOffsets;
 
     mem_.resize(callee.sp + bytes);
     callee.sp += bytes;
@@ -199,7 +238,9 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     // кладём frame
     frames_.push_back(callee);
 
-    // записываем адреса параметров (по ссылке)
+    // записываем параметры:
+    // - scalar params: by VALUE
+    // - array params: as POINTER (int) to caller memory
     const auto& params = f.GiveParam();
     if (params.size() != args.size()) {
         throw std::runtime_error("Bad arg count for function " + fname);
@@ -209,31 +250,40 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
         int off = params[i]->GiveOffset();
         std::size_t slot = frames_.back().bp + (std::size_t)off;
 
-        // если аргумент — адрес → пишем его
-        if (std::holds_alternative<Address>(args[i])) {
+        const bool isPtrParam = (dynamic_cast<TIDElementArray<int>*>(params[i]) ||
+                                 dynamic_cast<TIDElementArray<double>*>(params[i]) ||
+                                 dynamic_cast<TIDElementArray<bool>*>(params[i]) ||
+                                 dynamic_cast<TIDElementArray<char>*>(params[i]));
+
+        if (isPtrParam) {
+            // Expect an address (base of array). Store pointer as int.
+            if (!std::holds_alternative<Address>(args[i])) {
+                throw std::runtime_error("Array parameter expects address in function " + fname);
+            }
             auto a = std::get<Address>(args[i]);
             int ptr = (int)a.abs;
             writePod<int>(slot, ptr);
         } else {
-            // если аргумент — значение → создаём временную ячейку в памяти callee
-            Types t = params[i]->GiveType();
-            std::size_t tmpAddr = frames_.back().sp;
-            mem_.resize(tmpAddr + sizeOf(t));
-            frames_.back().sp += sizeOf(t);
-
-            Address tmp{tmpAddr, t};
-            writeTyped(tmp, args[i]);
-
-            int ptr = (int)tmpAddr;
-            writePod<int>(slot, ptr);
+            // Scalar: store by value directly into the frame slot.
+            Address dst{slot, params[i]->GiveType()};
+            writeTyped(dst, args[i]);
         }
     }
 
     std::vector<Value> localStack;
-    exec(L.bodyStart, L.endIp, localStack);
+    // The compiler emits a final FREE at the end of each function and stores
+    // the end label after that FREE. We manage frames ourselves in the VM,
+    // so executing that last FREE would shrink the frame memory before we
+    // can read the return value (leading to OOB / heap corruption symptoms).
+    // Therefore, we stop right before the final instruction.
+    std::size_t fnEnd = L.endIp;
+    if (fnEnd > L.bodyStart) fnEnd -= 1;
+    exec(L.bodyStart, fnEnd, localStack);
 
     Value ret = std::int32_t(0);
-    if (!localStack.empty()) ret = eval(localStack.back());
+    if (!localStack.empty()) {
+        ret = eval(localStack.back());
+    }
 
     // гарантированно очищаем память функции
     mem_.resize(frames_.back().bp);
@@ -323,8 +373,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 } else {
                     Value offv = eval(stack.back());
                     stack.pop_back();
-                    
-
                     if (!std::holds_alternative<std::int32_t>(offv)) throw std::runtime_error("Offset must be int");
                     rel = std::get<std::int32_t>(offv);
                 }
@@ -332,10 +380,14 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 Frame& fr = frames_.back();
                 std::size_t abs = fr.bp + (std::size_t)rel;
 
-                // параметр → в ячейке лежит указатель (int)
-                if ((std::size_t)rel < fr.paramBytes) {
-                    int ptr = readPod<int>(abs);
-                    abs = (std::size_t)ptr;
+                // If this offset corresponds to an array parameter, the slot stores a pointer (int)
+                // to caller memory. Only in this case we dereference.
+                for (std::size_t po : fr.ptrParamOffsets) {
+                    if (po == (std::size_t)rel) {
+                        int ptr = readPod<int>(abs);
+                        abs = (std::size_t)ptr;
+                        break;
+                    }
                 }
 
                 stack.push_back(Address{abs, t});
@@ -346,7 +398,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 std::string op = el.second;
 
                 if (op == "=") {
-                    // std::cout<<"djf"<<std::endl;
                     Value rhs = eval(stack.back()); stack.pop_back();
                     Address lhs = asAddress(stack.back()); stack.pop_back();
                     writeTyped(lhs, rhs);
@@ -374,15 +425,12 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 bool useDouble = std::holds_alternative<double>(a) || std::holds_alternative<double>(b);
 
                 if (op == "+") {
-                    // std::cout<<getInt(a) +getInt(b)<<std::endl;
                     if (useDouble) stack.push_back(getDouble(a) + getDouble(b));
                     else stack.push_back(getInt(a) + getInt(b));
                 } else if (op == "-") {
                     if (useDouble) stack.push_back(getDouble(a) - getDouble(b));
                     else stack.push_back(getInt(a) - getInt(b));
                 } else if (op == "*") {
-                    // std::cout<<getInt(a) * getInt(b)<<std::endl;
-
                     if (useDouble) stack.push_back(getDouble(a) * getDouble(b));
                     else stack.push_back(getInt(a) * getInt(b));
                 } else if (op == "/") {

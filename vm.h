@@ -34,7 +34,11 @@ private:
     struct Frame {
         std::size_t bp = 0;
         std::size_t sp = 0;
-        std::size_t paramBytes = 0; // зона параметров: там лежат адреса (int)
+        // Scalar parameters are stored by VALUE in the callee frame.
+        // Array parameters are stored as POINTERS (int) to the caller memory.
+        // We store offsets (relative to bp) of pointer-parameters to know when an
+        // "address-of" operation must be dereferenced.
+        std::vector<std::size_t> ptrParamOffsets;
     };
 
     POLIZ& code_;
@@ -74,7 +78,7 @@ private:
         std::size_t allocIndex = 0;
         std::size_t bodyStart = 0;
         std::size_t endIp = 0;
-        std::size_t paramBytes = 0;
+        std::vector<std::size_t> ptrParamOffsets;
     };
 
     FuncLayout analyzeLayout(std::size_t storedAddr, TFuncElement f);

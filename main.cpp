@@ -1,4 +1,3 @@
-//#define _GLIBCXX_DEBUG
 #include "Syntaxer.h"
 #include "vm.h"
 
@@ -13,7 +12,6 @@ static std::string resolveInput(const std::string& name) {
 
     fs::path cur = fs::current_path();
 
-    // 1) текущая папка запуска
     fs::path c1 = cur / p;
     if (fs::exists(c1)) return c1.string();
 
@@ -36,8 +34,6 @@ int main(int argc, char** argv) {
 
         Syntaxer syn(fileName);
         syn.Start();
-
-        // syn.PrintPoliz();
 
         PolizVm vm(syn.poliz, syn.func);
         vm.runAuto(); // main() если есть, иначе выполнить POLIZ с 0

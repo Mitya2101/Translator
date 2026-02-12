@@ -1,0 +1,26 @@
+int f(int a){
+    return a * a;
+}
+int gcd(int a, int b){
+    while(b != 0){
+        if(a < b){
+            int c = a;
+            a = b;
+            b = c;
+        }else{
+            int c = b;
+            b = a % b;
+            a = c;
+        }
+    }
+    return a;
+}
+int x;
+read(x);
+int a[100];
+for(int i = 0; i < x; i = i + 1){
+    a[i] = f(i);
+}
+for(int i = 2; i < x; i = i + 1){
+    print(gcd(a[i], a[i - 2]));
+}

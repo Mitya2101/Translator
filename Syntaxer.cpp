@@ -857,6 +857,8 @@ SyntaxerNode* Syntaxer::ExprUnary(){
     return ExprPrimary();
 }
 
+
+
 SyntaxerNode* Syntaxer::ExprPrimary(){
     SyntaxerNode* tmp = new SyntaxerNode();
     if(lexer.currentToken().lexeme == "("){
@@ -952,6 +954,9 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             std::vector<Types> param_type;
             while(lexer.currentToken().lexeme != ")"){
                 tmp->AddChildren(ExprAssign());
+                if (all.empty()) {
+                    throw "internal error: type stack underflow in argument list";
+                }
                 param_type.push_back(all.back().first);
                 name += " ";
                 name += TypeToString(all.back().first);
@@ -1016,7 +1021,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             else if(IsArray<double>(help1) != nullptr){
                 was = IsArray<double>(help1)->GiveSizes().size();
                 all_sizes = IsArray<double>(help1)->GiveSizes();
-                only_size = sizeof(char);
+                only_size = sizeof(double);
             }else if(IsArray<bool>(help1) != nullptr){
                 was = IsArray<bool>(help1)->GiveSizes().size();
                 all_sizes = IsArray<bool>(help1)->GiveSizes();
@@ -1056,30 +1061,27 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             if(was != cnt){
                 throw "You can not use array in expressions " + name;
             }
+
+            // Индексы массива в POLIZ считаются в элементах, а смещения переменных (offset)
+            // хранятся в байтах. Поэтому переводим линейный индекс -> байтовый сдвиг.
+            poliz.AddEl({POLIZ_Element::INT, std::to_string(only_size)});
+            poliz.AddEl({POLIZ_Element::OPERATION, "*"});
+
             poliz.AddEl({POLIZ_Element::INT,std::to_string(Give(name)->GiveOffset())});
             poliz.AddEl({POLIZ_Element::OPERATION,"+"});
 
             if(help1->GiveType() == Types::INT){
-                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(int))});
-                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_INT,""});
             }
             if(help1->GiveType() == Types::CHAR){
-                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(char))});
-                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_CHAR,""});
             }
             if(help1->GiveType() == Types::DOUBLE){
-                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(double))});
-                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_DOUBLE,""});
             }
             if(help1->GiveType() == Types::BOOL){
-                poliz.AddEl({POLIZ_Element::INT,std::to_string(sizeof(bool))});
-                poliz.AddEl({POLIZ_Element::OPERATION, "*"});
                 poliz.AddEl({POLIZ_Element::ADRESS_BOOL,""});
             }
-
            
             
             all.push_back({help1->GiveType(),was - cnt});
@@ -1194,7 +1196,13 @@ SyntaxerNode* Syntaxer::Statement() {
 
     // иначе — просто выражение с точкой с запятой: <Expr> ";"
     SyntaxerNode* expr = Expr();
-    all.pop_back();
+    // Expr() should push its resulting type to 'all'. Guard against underflow
+    // to avoid UB/heap corruption on malformed programs.
+    if (!all.empty()) {
+        all.pop_back();
+    } else {
+        throw "internal error: type stack underflow after expression";
+    }
 
 
 
@@ -1334,23 +1342,23 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         }
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),Types::BOOL,
+                new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back().first,
                 size_counter.back())));
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),Types::CHAR,size_counter.back())));
+                new TIDElementVariable<char>(nameNode->GiveLexeme(),all.back().first,size_counter.back())));
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),Types::INT,size_counter.back())));
+                new TIDElementVariable<int>(nameNode->GiveLexeme(),all.back().first,size_counter.back())));
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),Types::DOUBLE,size_counter.back())));
+                new TIDElementVariable<double>(nameNode->GiveLexeme(),all.back().first,size_counter.back())));
                 size_counter.back() += sizeof(double);
         }
-        // all.pop_back();
+        // Nothing was pushed to 'all' for a plain declaration.
         lexer.next();
         return root;
     }
@@ -1420,6 +1428,9 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
 
     throw BuildError({"=","["}, lexer.currentToken());
 }
+
+
+
 
 SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
     // <Type> <Variable> ( "(" ... | "=" Expr ";" | "[" Expr "]" ... ";" )
@@ -1702,24 +1713,28 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         if(Find(nameNode->GiveLexeme())){
             throw nameNode->GiveLexeme() + "- such variable does not exists";
         }
-        if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
+        // 'all' is an expression type stack and may be empty for plain declarations like "int x;".
+        // Use the declared type directly.
+        const Types declared = StringToType(typeNode->GiveLexeme());
+
+        if(declared == Types::BOOL){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),Types::BOOL,size_counter.back())));
+                new TIDElementVariable<bool>(nameNode->GiveLexeme(),declared,size_counter.back())));
                 size_counter.back() += sizeof(bool);
-        }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
+        }else if(declared == Types::CHAR){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),Types::CHAR,size_counter.back())));
+                new TIDElementVariable<char>(nameNode->GiveLexeme(),declared,size_counter.back())));
                 size_counter.back() += sizeof(char);
-        }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
+        }else if(declared == Types::INT){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),Types::INT,size_counter.back())));
+                new TIDElementVariable<int>(nameNode->GiveLexeme(),declared,size_counter.back())));
                 size_counter.back() += sizeof(int);
-        }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
+        }else if(declared == Types::DOUBLE){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),Types::DOUBLE, size_counter.back())));     
+                new TIDElementVariable<double>(nameNode->GiveLexeme(),declared, size_counter.back())));     
                 size_counter.back() += sizeof(double);
         }
-        // all.pop_back();
+        all.pop_back();
         lexer.next();
         return root;
     }
@@ -1838,6 +1853,8 @@ SyntaxerNode* Syntaxer::ArgListType() {
     cur_function_name_ += t->GiveLexeme();
     v->UpdateLexeme(now);
     if(cnt != 0){
+        // Array parameter: we store a pointer (address) in the call frame.
+        // Address type in this project is represented as int.
         Types tr = StringToType(t->GiveLexeme());
         if(t->GiveLexeme() == "int"){
             cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<int>(now,tr,cnt,size_counter.back())));
@@ -1853,19 +1870,20 @@ SyntaxerNode* Syntaxer::ArgListType() {
             size_counter.back() += sizeof(int);
         }
     }else{
+        // Scalar parameter: store tightly packed values (byte offsets).
         Types tr = StringToType(t->GiveLexeme());
         if(t->GiveLexeme() == "int"){
             cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<int>(now,tr,size_counter.back())));
             size_counter.back() += sizeof(int);
         }else if(t->GiveLexeme() == "double"){
             cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<double>(now,tr,size_counter.back())));
-            size_counter.back() += sizeof(int);
+            size_counter.back() += sizeof(double);
         }else if(t->GiveLexeme() == "bool"){
             cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<bool>(now,tr,size_counter.back())));
-            size_counter.back() += sizeof(int);
+            size_counter.back() += sizeof(bool);
         }else if(t->GiveLexeme() == "char"){
             cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<char>(now,tr,size_counter.back())));
-            size_counter.back() += sizeof(int);
+            size_counter.back() += sizeof(char);
         }
     }
     list->AddChildren(makeParam(t, v));
@@ -1887,39 +1905,39 @@ SyntaxerNode* Syntaxer::ArgListType() {
         now = v2->GiveLexeme();
         cur_function_name_ += " ";
         cur_function_name_ += t2->GiveLexeme();
-        v->UpdateLexeme(now);
+        v2->UpdateLexeme(now);
         if(cnt != 0){
-            Types tr = StringToType(t->GiveLexeme());
-            if(t->GiveLexeme() == "int"){
+            // Array parameter: store a pointer (address) in the call frame.
+            Types tr = StringToType(t2->GiveLexeme());
+            if(t2->GiveLexeme() == "int"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<int>(now,tr,cnt,size_counter.back())));
                 size_counter.back() += sizeof(int);
-            }else if(t->GiveLexeme() == "double"){
+            }else if(t2->GiveLexeme() == "double"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<double>(now,tr,cnt,size_counter.back())));
                 size_counter.back() += sizeof(int);
-            }else if(t->GiveLexeme() == "bool"){
+            }else if(t2->GiveLexeme() == "bool"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(now,tr,cnt,size_counter.back())));
                 size_counter.back() += sizeof(int);
-            }else if(t->GiveLexeme() == "char"){
+            }else if(t2->GiveLexeme() == "char"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<char>(now,tr,cnt,size_counter.back())));
                 size_counter.back() += sizeof(int);
             }
         }else{
-            Types tr = StringToType(t->GiveLexeme());
-            if(t->GiveLexeme() == "int"){
+            // Scalar parameter: tightly packed values.
+            Types tr = StringToType(t2->GiveLexeme());
+            if(t2->GiveLexeme() == "int"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<int>(now,tr,size_counter.back())));
                 size_counter.back() += sizeof(int);
-            }else if(t->GiveLexeme() == "double"){
+            }else if(t2->GiveLexeme() == "double"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<double>(now,tr,size_counter.back())));
-                size_counter.back() += sizeof(int);
+                size_counter.back() += sizeof(double);
 
-            }else if(t->GiveLexeme() == "bool"){
+            }else if(t2->GiveLexeme() == "bool"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<bool>(now,tr,size_counter.back())));
-                
-                size_counter.back() += sizeof(int);
-            }else if(t->GiveLexeme() == "char"){
+                size_counter.back() += sizeof(bool);
+            }else if(t2->GiveLexeme() == "char"){
                 cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<char>(now,tr,size_counter.back())));
-                
-                size_counter.back() += sizeof(int);
+                size_counter.back() += sizeof(char);
             }
         }
         list->AddChildren(makeParam(t2, v2));
@@ -2027,14 +2045,8 @@ SyntaxerNode* Syntaxer::For() {
 
     int was = InCycle;
     InCycle = true;
-    int ty = poliz.GiveSize();
-    poliz.AddEl({POLIZ_Element::ALLOCATE,""});
-    size_counter.push_back(size_counter.back());
     SyntaxerNode* body = ProgramNoCreateFunction();
 
-    poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - size_counter[size_counter.size() - 2])},ty);
-    poliz.AddEl({POLIZ_Element::FREE,std::to_string(size_counter.back() - size_counter[size_counter.size() - 2])});
-    size_counter.pop_back();
 
     poliz.AddEl({POLIZ_Element::POLIZ_LABEL,std::to_string(ind_expr)});
     poliz.AddEl({POLIZ_Element::POLIZ_GO,""});

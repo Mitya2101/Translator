@@ -28,7 +28,8 @@ enum class POLIZ_Element{
     TO_DOUBLE,
     TO_INT,
     TO_CHAR,
-    TO_BOOL
+    TO_BOOL,
+    END_FUNCTION
 };
 
 

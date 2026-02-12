@@ -294,6 +294,7 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
 
 void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& stack) {
     std::size_t ip = ipBegin;
+    // std::cout<<ipBegin<<' '<<ipEnd<<std::endl;
 
     // Debug helpers (local): show what types are currently on the VM stack when it crashes.
     auto valueTypeName = [](const Value& v) -> const char* {
@@ -320,10 +321,13 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
     };
 
     while (ip < ipEnd) {
+        // std::cout<<ip<<std::endl;
         auto el = code_.GiveEl((int)ip);
 
         try {
             switch (el.first) {
+            case POLIZ_Element::END_FUNCTION:
+                return;
             case POLIZ_Element::INT:
                 stack.push_back((std::int32_t)toI64(el.second));
                 break;

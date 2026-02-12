@@ -71,7 +71,7 @@ public:
 
 private:
     SyntaxerNode* Program();
-    SyntaxerNode* ProgramNoCreateFunction();
+    SyntaxerNode* ProgramNoCreateFunction(bool need);
 
     SyntaxerNode* Statement();
     SyntaxerNode* StatementNoCreationFunction();

@@ -210,7 +210,7 @@ SyntaxerNode* Syntaxer::If(){
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     size_counter.push_back(size_counter.back());
 
-    SyntaxerNode* program = ProgramNoCreateFunction();
+    SyntaxerNode* program = ProgramNoCreateFunction(true);
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
         size_counter[size_counter.size() - 2])},ind_help);
@@ -265,7 +265,7 @@ SyntaxerNode* Syntaxer::Else(){
     int ind = poliz.GiveSize();
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
 
-    SyntaxerNode* else_node = ProgramNoCreateFunction();
+    SyntaxerNode* else_node = ProgramNoCreateFunction(true);
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
         size_counter[size_counter.size() - 2])},ind);
@@ -428,7 +428,7 @@ SyntaxerNode* Syntaxer::While(){
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     size_counter.push_back(size_counter.back());
 
-    now->AddChildren(ProgramNoCreateFunction());
+    now->AddChildren(ProgramNoCreateFunction(true));
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
         size_counter[size_counter.size() - 2])},ind);
@@ -1152,8 +1152,10 @@ SyntaxerNode* Syntaxer::Program() {
     return root;
 }
 
-SyntaxerNode* Syntaxer::ProgramNoCreateFunction() {
-    tids.back().push_back({TID()});
+SyntaxerNode* Syntaxer::ProgramNoCreateFunction(bool need) {
+    if(need){
+        tids.back().push_back({TID()});
+    }
     SyntaxerNode* root = new SyntaxerNode();
     root->UpdateLexeme("ProgramNoCreateFunction");
     root->UpdateType(Token::Type::Identifier);
@@ -1166,7 +1168,9 @@ SyntaxerNode* Syntaxer::ProgramNoCreateFunction() {
         SyntaxerNode* stmt = StatementNoCreationFunction();
         root->AddChildren(stmt);
     }
-    tids.back().pop_back();
+    if(need){
+        tids.back().pop_back();
+    }
     return root;
 }
 SyntaxerNode* Syntaxer::Statement() {
@@ -1500,7 +1504,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             for(int i =0 ;i < cur_func.size();i++){
                 tids.back().back().CreateVar(cur_func[i]);
             }
-            SyntaxerNode* body = ProgramNoCreateFunction();
+            SyntaxerNode* body = ProgramNoCreateFunction(true);
 
             poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
                 size_counter[size_counter.size() - 2])},ind_help);
@@ -1614,7 +1618,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         int ind = poliz.GiveSize();
         poliz.AddEl({POLIZ_Element::ALLOCATE,""});
 
-        SyntaxerNode* body = ProgramNoCreateFunction();
+        SyntaxerNode* body = ProgramNoCreateFunction(true);
 
         poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
             size_counter[size_counter.size() - 2])},ind);
@@ -1980,8 +1984,11 @@ SyntaxerNode* Syntaxer::For() {
         throw BuildError({"("}, lexer.currentToken());
     }
     lexer.next(); // '('
-
+    size_counter.push_back(size_counter.back());
+    int alloc = poliz.GiveSize();
+    poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     // --- Инициализация: [ CreateVariableOrArray | Expr ] ";" ---
+    tids.back().push_back({TID()});
     SyntaxerNode* init = nullptr;
     if (lexer.currentToken().lexeme != ";") {
         const std::string& lx = lexer.currentToken().lexeme;
@@ -2045,13 +2052,21 @@ SyntaxerNode* Syntaxer::For() {
 
     int was = InCycle;
     InCycle = true;
-    SyntaxerNode* body = ProgramNoCreateFunction();
+    SyntaxerNode* body = ProgramNoCreateFunction(false);
+
+    tids.back().pop_back();
+    
+    
 
 
     poliz.AddEl({POLIZ_Element::POLIZ_LABEL,std::to_string(ind_expr)});
     poliz.AddEl({POLIZ_Element::POLIZ_GO,""});
     poliz.UpdateEl({POLIZ_Element::POLIZ_LABEL,std::to_string(poliz.GiveSize())},
     ind_condition);
+
+    poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - size_counter[size_counter.size() - 2])},alloc);
+    poliz.AddEl({POLIZ_Element::FREE,std::to_string(size_counter.back() - size_counter[size_counter.size() - 2])});
+    size_counter.pop_back();
 
     InCycle = was;
     if (lexer.currentToken().lexeme != "}") {

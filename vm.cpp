@@ -146,20 +146,13 @@ std::optional<std::string> PolizVm::findFuncByAddr(std::size_t addr) {
 
 PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement f) {
     FuncLayout L{};
-
-    // Два варианта адреса:
-    // 1) storedAddr указывает на POLIZ_LABEL (перед телом функции)
-    // 2) storedAddr указывает на первую инструкцию тела (после ALLOCATE)
-
     auto e0 = code_.GiveEl((int)storedAddr);
 
     if (e0.first == POLIZ_Element::POLIZ_LABEL) {
-        // label, go, allocate, body...
         L.labelIndex = storedAddr;
         L.allocIndex = storedAddr + 2;
         L.bodyStart  = storedAddr + 3;
     } else {
-        // ... label, go, allocate, bodyStart(storedAddr)
         L.bodyStart  = storedAddr;
         L.allocIndex = storedAddr - 1;
         L.labelIndex = storedAddr - 3;
@@ -167,13 +160,9 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement 
 
     auto label = code_.GiveEl((int)L.labelIndex);
     L.endIp = (std::size_t)toI64(label.second);
-
-    // Parameters: in this project scalars are stored by VALUE, arrays are stored as pointers.
-    // Remember which parameter offsets are pointers so ADRESS_* can dereference only those.
     const auto& params = f.GiveParam();
     for (auto* p : params) {
         const int off = p->GiveOffset();
-        // Array parameters are represented by TIDElementArray<...>
         if (dynamic_cast<TIDElementArray<int>*>(p) ||
             dynamic_cast<TIDElementArray<double>*>(p) ||
             dynamic_cast<TIDElementArray<bool>*>(p) ||
@@ -198,14 +187,6 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     FuncLayout L = analyzeLayout(storedAddr, f);
     auto allocEl = code_.GiveEl((int)L.allocIndex);
     std::size_t bytes = (std::size_t)toI64(allocEl.second);
-
-    // (debug prints removed)
-
-    // IMPORTANT:
-    // In this project, the compiler may emit ALLOCATE size that does NOT include
-    // the space needed for function parameters (only locals). But parameter offsets
-    // are absolute within the frame (starting from 0), so we must ensure the frame
-    // is at least large enough to store all parameters.
     std::size_t paramBytesNeed = 0;
     {
         const auto& params = f.GiveParam();
@@ -213,7 +194,6 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
             const int off = p->GiveOffset();
             if (off < 0) continue;
             std::size_t sz = sizeOf(p->GiveType());
-            // Array parameters are stored as pointers (int) in the frame.
             if (dynamic_cast<TIDElementArray<int>*>(p) ||
                 dynamic_cast<TIDElementArray<double>*>(p) ||
                 dynamic_cast<TIDElementArray<bool>*>(p) ||
@@ -234,13 +214,8 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
 
     mem_.resize(callee.sp + bytes);
     callee.sp += bytes;
-
-    // кладём frame
     frames_.push_back(callee);
 
-    // записываем параметры:
-    // - scalar params: by VALUE
-    // - array params: as POINTER (int) to caller memory
     const auto& params = f.GiveParam();
     if (params.size() != args.size()) {
         throw std::runtime_error("Bad arg count for function " + fname);
@@ -256,7 +231,6 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
                                  dynamic_cast<TIDElementArray<char>*>(params[i]));
 
         if (isPtrParam) {
-            // Expect an address (base of array). Store pointer as int.
             if (!std::holds_alternative<Address>(args[i])) {
                 throw std::runtime_error("Array parameter expects address in function " + fname);
             }
@@ -264,18 +238,12 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
             int ptr = (int)a.abs;
             writePod<int>(slot, ptr);
         } else {
-            // Scalar: store by value directly into the frame slot.
             Address dst{slot, params[i]->GiveType()};
             writeTyped(dst, args[i]);
         }
     }
 
     std::vector<Value> localStack;
-    // The compiler emits a final FREE at the end of each function and stores
-    // the end label after that FREE. We manage frames ourselves in the VM,
-    // so executing that last FREE would shrink the frame memory before we
-    // can read the return value (leading to OOB / heap corruption symptoms).
-    // Therefore, we stop right before the final instruction.
     std::size_t fnEnd = L.endIp;
     if (fnEnd > L.bodyStart) fnEnd -= 1;
     exec(L.bodyStart, fnEnd, localStack);
@@ -285,7 +253,6 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
         ret = eval(localStack.back());
     }
 
-    // гарантированно очищаем память функции
     mem_.resize(frames_.back().bp);
     frames_.pop_back();
 
@@ -295,7 +262,6 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
 void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& stack) {
     std::size_t ip = ipBegin;
 
-    // Debug helpers (local): show what types are currently on the VM stack when it crashes.
     auto valueTypeName = [](const Value& v) -> const char* {
         if (std::holds_alternative<std::int32_t>(v)) return "int";
         if (std::holds_alternative<double>(v)) return "double";
@@ -380,8 +346,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 Frame& fr = frames_.back();
                 std::size_t abs = fr.bp + (std::size_t)rel;
 
-                // If this offset corresponds to an array parameter, the slot stores a pointer (int)
-                // to caller memory. Only in this case we dereference.
                 for (std::size_t po : fr.ptrParamOffsets) {
                     if (po == (std::size_t)rel) {
                         int ptr = readPod<int>(abs);
@@ -512,10 +476,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
             }
 
             case POLIZ_Element::POLIZ_FGO: {
-                // В ПОЛИЗЕ условного перехода у вас порядок такой:
-                //   <cond_expr> POLIZ_LABEL <target> POLIZ_FGO
-                // т.е. на стеке сверху лежит label, под ним условие.
-
                 auto asIp = [](const Value& vv) -> std::size_t {
                     if (std::holds_alternative<std::int32_t>(vv)) return (std::size_t)std::get<std::int32_t>(vv);
                     if (std::holds_alternative<bool>(vv)) return (std::size_t)(std::get<bool>(vv) ? 1 : 0);
@@ -527,7 +487,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
 
                 std::size_t target = 0;
                 if (!el.second.empty()) {
-                    // Переход задан в аргументе операции, на стеке только условие.
                     target = (std::size_t)toI64(el.second);
 
                     Value condV = eval(stack.back());
@@ -543,7 +502,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                     break;
                 }
 
-                // el.second пустой: сначала снимаем label, затем условие.
                 Value labelV = eval(stack.back());
                 stack.pop_back();
                 target = asIp(labelV);
@@ -567,9 +525,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 break;
 
             case POLIZ_Element::CALL_FUNCTION: {
-                // Синтаксер НЕ записывает количество аргументов в el.second.
-                // В POLIZ лежит: <args...> FUNCTION_ADRESS <addr> CALL_FUNCTION
-                // Поэтому читаем адрес функции со стека, затем узнаём argc из таблицы функций.
                 Value addrV = eval(stack.back());
                 stack.pop_back();
                 if (!std::holds_alternative<std::int32_t>(addrV)) throw std::runtime_error("Bad function address");
@@ -592,8 +547,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
             }
 
             case POLIZ_Element::CALL_PRINT: {
-                // CALL_PRINT генерируется синтаксером для идентификатора print(...)
-                // и ВСЕГДА имеет ровно один аргумент (по таблице встроенных функций).
                 Value v = eval(stack.back());
                 stack.pop_back();
 
@@ -605,7 +558,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 else std::cout << "<?>";
 
                 std::cout << "\n";
-                // void-значение
                 stack.push_back(std::int32_t(0));
                 break;
             }
@@ -635,8 +587,6 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
                 return;
 
             default:
-                // TO_INT/TO_DOUBLE/TO_CHAR/TO_BOOL пока можно не реализовывать,
-                // если синтаксер уже приводит типы заранее.
                 break;
             }
         }
@@ -663,7 +613,6 @@ void PolizVm::run() {
 }
 
 void PolizVm::runAuto() {
-    // если main существует — вызовем её
     if (funcs_.Find("main")) {
         auto f = funcs_.Get("main");
         std::size_t addr = (std::size_t)f.GivePolizIndex();

@@ -327,6 +327,106 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
 
         try {
             switch (el.first) {
+            case POLIZ_Element::TO_DOUBLE:{
+                Value tmp2 = stack.back();
+                stack.pop_back();
+                if(std::holds_alternative<Address>(tmp2)){
+                    Address tmp = std::get<Address>(tmp2);
+                    if(tmp.type == Types::INT){
+                        stack.push_back((double)readPod<int>(tmp.abs));
+                    }else if(tmp.type == Types::CHAR){
+                        stack.push_back((double)readPod<char>(tmp.abs));
+                    }else if(tmp.type == Types::BOOL){
+                        stack.push_back((double)readPod<bool>(tmp.abs));
+                    }else{
+                        stack.push_back((double)readPod<double>(tmp.abs));
+                    }
+                }else if(std::holds_alternative<int>(tmp2)){
+                    stack.push_back((double)std::get<int>(tmp2));
+                }else if(std::holds_alternative<double>(tmp2)){
+                    stack.push_back((double)std::get<double>(tmp2));
+                }else if(std::holds_alternative<char>(tmp2)){
+                    stack.push_back((double)std::get<char>(tmp2)); 
+                }else{
+                    stack.push_back((double)std::get<bool>(tmp2)); 
+                }
+                break;
+            }
+            case POLIZ_Element::TO_INT:{
+                Value tmp2 = stack.back();
+                stack.pop_back();
+                if(std::holds_alternative<Address>(tmp2)){
+                    Address tmp = std::get<Address>(tmp2);
+                    if(tmp.type == Types::INT){
+                        stack.push_back((int)readPod<int>(tmp.abs));
+                    }else if(tmp.type == Types::CHAR){
+                        stack.push_back((int)readPod<char>(tmp.abs));
+                    }else if(tmp.type == Types::BOOL){
+                        stack.push_back((int)readPod<bool>(tmp.abs));
+                    }else{
+                        stack.push_back((int)readPod<double>(tmp.abs));
+                    }
+                }else if(std::holds_alternative<int>(tmp2)){
+                    stack.push_back((int)std::get<int>(tmp2));
+                }else if(std::holds_alternative<double>(tmp2)){
+                    stack.push_back((int)std::get<double>(tmp2));
+                }else if(std::holds_alternative<char>(tmp2)){
+                    stack.push_back((int)std::get<char>(tmp2)); 
+                }else{
+                    stack.push_back((int)std::get<bool>(tmp2)); 
+                }
+                break;
+            }
+            case POLIZ_Element::TO_CHAR:{
+                Value tmp2 = stack.back();
+                stack.pop_back();
+                if(std::holds_alternative<Address>(tmp2)){
+                    Address tmp = std::get<Address>(tmp2);
+                    if(tmp.type == Types::INT){
+                        stack.push_back((char)readPod<int>(tmp.abs));
+                    }else if(tmp.type == Types::CHAR){
+                        stack.push_back((char)readPod<char>(tmp.abs));
+                    }else if(tmp.type == Types::BOOL){
+                        stack.push_back((char)readPod<bool>(tmp.abs));
+                    }else{
+                        stack.push_back((char)readPod<double>(tmp.abs));
+                    }
+                }else if(std::holds_alternative<int>(tmp2)){
+                    stack.push_back((char)std::get<int>(tmp2));
+                }else if(std::holds_alternative<double>(tmp2)){
+                    stack.push_back((char)std::get<double>(tmp2));
+                }else if(std::holds_alternative<char>(tmp2)){
+                    stack.push_back((char)std::get<char>(tmp2)); 
+                }else{
+                    stack.push_back((char)std::get<bool>(tmp2)); 
+                }
+                break;
+            }
+            case POLIZ_Element::TO_BOOL:{
+                Value tmp2 = stack.back();
+                stack.pop_back();
+                if(std::holds_alternative<Address>(tmp2)){
+                    Address tmp = std::get<Address>(tmp2);
+                    if(tmp.type == Types::INT){
+                        stack.push_back((bool)readPod<int>(tmp.abs));
+                    }else if(tmp.type == Types::CHAR){
+                        stack.push_back((bool)readPod<char>(tmp.abs));
+                    }else if(tmp.type == Types::BOOL){
+                        stack.push_back((bool)readPod<bool>(tmp.abs));
+                    }else{
+                        stack.push_back((bool)readPod<double>(tmp.abs));
+                    }
+                }else if(std::holds_alternative<int>(tmp2)){
+                    stack.push_back((bool)std::get<int>(tmp2));
+                }else if(std::holds_alternative<double>(tmp2)){
+                    stack.push_back((bool)std::get<double>(tmp2));
+                }else if(std::holds_alternative<char>(tmp2)){
+                    stack.push_back((bool)std::get<char>(tmp2)); 
+                }else{
+                    stack.push_back((bool)std::get<bool>(tmp2)); 
+                }
+                break;
+            }
             case POLIZ_Element::END_FUNCTION:
                 return;
             case POLIZ_Element::INT:

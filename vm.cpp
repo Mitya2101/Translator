@@ -150,7 +150,7 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement 
     // Два варианта адреса:
     // 1) storedAddr указывает на POLIZ_LABEL (перед телом функции)
     // 2) storedAddr указывает на первую инструкцию тела (после ALLOCATE)
-
+    // std::cout<<storedAddr<<' '<<code_.GiveSize()<<std::endl;
     auto e0 = code_.GiveEl((int)storedAddr);
 
     if (e0.first == POLIZ_Element::POLIZ_LABEL) {
@@ -161,10 +161,10 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement 
     } else {
         // ... label, go, allocate, bodyStart(storedAddr)
         L.bodyStart  = storedAddr;
-        L.allocIndex = storedAddr - 1;
-        L.labelIndex = storedAddr - 3;
+        L.allocIndex = storedAddr;
+        L.labelIndex = storedAddr;
     }
-
+    // std::cout<<L.labelIndex<<std::endl;
     auto label = code_.GiveEl((int)L.labelIndex);
     L.endIp = (std::size_t)toI64(label.second);
 
@@ -196,8 +196,7 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     auto f = funcs_.Get(fname);
 
     FuncLayout L = analyzeLayout(storedAddr, f);
-    auto allocEl = code_.GiveEl((int)L.allocIndex);
-    std::size_t bytes = (std::size_t)toI64(allocEl.second);
+    std::size_t bytes = 0;
 
     // (debug prints removed)
 
@@ -223,7 +222,7 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
             paramBytesNeed = std::max(paramBytesNeed, (std::size_t)off + sz);
         }
     }
-    if (bytes < paramBytesNeed) bytes = paramBytesNeed;
+    bytes = paramBytesNeed;
 
     Frame& caller = frames_.back();
 
@@ -278,7 +277,8 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     // Therefore, we stop right before the final instruction.
     std::size_t fnEnd = L.endIp;
     if (fnEnd > L.bodyStart) fnEnd -= 1;
-    exec(L.bodyStart, fnEnd, localStack);
+
+    exec(storedAddr, 1e9, localStack);
 
     Value ret = std::int32_t(0);
     if (!localStack.empty()) {
@@ -322,6 +322,7 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
 
     while (ip < ipEnd) {
         // std::cout<<ip<<std::endl;
+
         auto el = code_.GiveEl((int)ip);
 
         try {

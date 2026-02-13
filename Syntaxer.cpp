@@ -1604,7 +1604,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         poliz.AddEl({POLIZ_Element::POLIZ_GO,""});
 
         func.CreateFunc(TFuncElement(nameNode->GiveLexeme(),
-            cur_func,StringToType(typeNode->GiveLexeme()),root,th,poliz.GiveSize() - 1));
+            cur_func,StringToType(typeNode->GiveLexeme()),root,th,poliz.GiveSize()));
 
         if (lexer.currentToken().lexeme != ")") {
             throw BuildError({")"}, lexer.currentToken());
@@ -1750,7 +1750,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
                 new TIDElementVariable<double>(nameNode->GiveLexeme(),declared, size_counter.back())));     
                 size_counter.back() += sizeof(double);
         }
-        all.pop_back();
+        // all.pop_back();
         lexer.next();
         return root;
     }

@@ -1,6 +1,7 @@
 #pragma once
 #include<vector>
 #include <string>
+#include<iostream>
 
 
 enum class POLIZ_Element{
@@ -38,7 +39,7 @@ class POLIZ{
 public:
     void UpdateEl(std::pair<POLIZ_Element,std::string> s,int ind){
         if(poliz_.size() <= ind || ind < 0){
-            throw "Inccoect index";
+            throw "Inccroect index";
         }
         poliz_[ind] = s;
     }
@@ -49,7 +50,7 @@ public:
 
     std::pair<POLIZ_Element,std::string> GiveEl(int ind){
         if(poliz_.size() <= ind || ind < 0){
-            throw "Inccoect index";
+            throw "Inccorect index";
         }
         return poliz_[ind];
     }

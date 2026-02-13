@@ -1,11 +1,72 @@
-int gcd(int a, int b){
-    if(a > b){
-        return 555;
+
+
+int a[1000001];
+int t[1000001 * 4];
+
+void build(int i,int l,int r){
+    if(l == r - 1){
+        t[i] = a[l];
+        return;
+    }
+    int mid = (l + r) / 2;
+    build(2* i + 1,l,mid);
+    build(2 * i + 2,mid,r);
+    t[i] = t[2 * i + 1] + t[2 * i + 2];
+}
+
+
+void upd(int i,int l,int r,int pos,int x){
+    if(l == r - 1){
+        t[i] = x;
+        return;
+    }
+    int mid = (l + r) / 2;
+    if(pos >= mid){
+        upd(2 * i + 2,mid,r,pos,x);
     }else{
-        return 666;
+        upd(2 * i + 1,l,mid,pos,x);
+    }
+    t[i] = t[2 * i + 1] + t[2 * i + 2];
+}
+
+
+int query(int i,int l,int r,int ql,int qr){
+    if(l >= ql && r <= qr){
+        return t[i];
+    }
+    if(l >= qr || ql >= r){
+        return 0;
+    }
+    int mid = (l + r) / 2;
+    return query(2 * i + 1,l,mid,ql,qr) + query(2 * i + 2,mid,r,ql,qr);
+}
+
+int n;
+read(n);
+for(int i = 0;i < n;i = i + 1){
+    read(a[i]);
+}
+
+build(0,0,n);
+int q;
+read(q);
+
+while(q > 0){
+    q = q - 1;
+
+    int type;
+    read(type);
+    if(type == 1){
+        int x;
+        int pos;
+        read(pos);
+        read(x);
+        upd(0,0,n,pos,x);
+    }else{
+        int l;
+        int r;
+        read(l);
+        read(r);
+        print(query(0,0,n,l,r + 1));
     }
 }
-int a = 5;
-int b = 7;
-print(gcd(a,b));
-print(gcd(b,a));

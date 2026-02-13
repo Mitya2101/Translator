@@ -9,6 +9,7 @@ protected:
     std::string name_;
     Types cur_;
     int offset_;
+    bool is_global;
 public:
     std::string GiveName(){
         return name_; 
@@ -16,8 +17,8 @@ public:
     Types GiveType(){
         return cur_;
     }
-    TIDElement(std::string name,Types cur,int offset):offset_(offset),
-    name_(name),cur_(cur){
+    TIDElement(std::string name,Types cur,int offset,bool is_global):offset_(offset),
+    name_(name),cur_(cur),is_global(is_global){
         if(cur_ == Types::VOID){
             throw "you cannot create var of void type";
         }
@@ -28,6 +29,9 @@ public:
     int GiveOffset(){
         return offset_;
     }
+    bool IsGlobal(){
+        return is_global;
+    }
 };
 
 template<typename T>
@@ -36,12 +40,12 @@ private:
     std::vector<int> sizes_;
     std::vector<T> arr_;
 public:
-    TIDElementArray(std::string name,Types cur,std::vector<int> sizes,int offset):
-    sizes_(sizes),TIDElement(name,cur,offset){
+    TIDElementArray(std::string name,Types cur,std::vector<int> sizes,int offset,bool is_global):
+    sizes_(sizes),TIDElement(name,cur,offset,is_global){
     };
     
-    TIDElementArray(std::string name,Types cur,int size_size,int offset):
-    TIDElement(name,cur,offset){
+    TIDElementArray(std::string name,Types cur,int size_size,int offset,bool is_global):
+    TIDElement(name,cur,offset,is_global){
         sizes_.resize(size_size);
     }
     
@@ -60,10 +64,10 @@ class TIDElementVariable:public TIDElement{
 private:
     T num_;
 public:
-    TIDElementVariable(std::string name,Types cur,int offset):
-    TIDElement(name,cur,offset){};
-    TIDElementVariable(std::string name,Types cur,T num,int offset):
-    TIDElement(name,cur,offset),num_(num){};
+    TIDElementVariable(std::string name,Types cur,int offset,bool is_global):
+    TIDElement(name,cur,offset,is_global){};
+    TIDElementVariable(std::string name,Types cur,T num,int offset,bool is_global):
+    TIDElement(name,cur,offset,is_global),num_(num){};
     const T& GiveNum(){
         return num_;    
     }

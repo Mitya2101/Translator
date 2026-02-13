@@ -30,6 +30,7 @@ enum class POLIZ_Element{
     TO_INT,
     TO_CHAR,
     TO_BOOL,
+    GLOBAL_VARIABLE,
     END_FUNCTION
 };
 

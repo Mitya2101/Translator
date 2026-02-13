@@ -327,6 +327,13 @@ void PolizVm::exec(std::size_t ipBegin, std::size_t ipEnd, std::vector<Value>& s
 
         try {
             switch (el.first) {
+            case POLIZ_Element::GLOBAL_VARIABLE:{
+                Address tmp = std::get<Address>(stack.back());
+                tmp.abs -= frames_.back().bp;
+                stack.pop_back();
+                stack.push_back(tmp);
+                break;
+            }
             case POLIZ_Element::TO_DOUBLE:{
                 Value tmp2 = stack.back();
                 stack.pop_back();

@@ -60,7 +60,7 @@ public:
     std::vector<std::vector<int>> continue_helper;
     std::vector<int> size_counter;
     std::vector<int> return_helper;
-
+    
 
     TFunc func;
     bool InCycle = false;

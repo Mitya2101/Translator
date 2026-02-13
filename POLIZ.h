@@ -30,7 +30,6 @@ enum class POLIZ_Element{
     TO_INT,
     TO_CHAR,
     TO_BOOL,
-    RETURN,
     END_FUNCTION
 };
 

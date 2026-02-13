@@ -314,6 +314,15 @@ SyntaxerNode* Syntaxer::Return(){
         throw "Return in function " + func.Get(InFunction).GiveName() + 
         " has different type with return value";
     }
+    if(poliz.GiveEl(poliz.GiveSize() - 1).first == POLIZ_Element::ADRESS_BOOL){
+        poliz.AddEl({POLIZ_Element::TO_BOOL,""});
+    }else if(poliz.GiveEl(poliz.GiveSize() - 1).first == POLIZ_Element::ADRESS_CHAR){
+        poliz.AddEl({POLIZ_Element::TO_CHAR,""});
+    }else if(poliz.GiveEl(poliz.GiveSize() - 1).first == POLIZ_Element::ADRESS_INT){
+        poliz.AddEl({POLIZ_Element::TO_INT,""});
+    }else if(poliz.GiveEl(poliz.GiveSize() - 1).first == POLIZ_Element::ADRESS_DOUBLE){
+        poliz.AddEl({POLIZ_Element::TO_DOUBLE,""});
+    }   
     return_helper.push_back(poliz.GiveSize());
     poliz.AddEl({POLIZ_Element::POLIZ_LABEL,""});
     poliz.AddEl({POLIZ_Element::POLIZ_GO,""});

@@ -1351,22 +1351,24 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         if(Find(nameNode->GiveLexeme())){
             throw nameNode->GiveLexeme() + "- such variable does not exists";
         }
+        // std::cout<<"dhf "<<all.size()<<std::endl;
+
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),all.back().first,
+                new TIDElementVariable<bool>(nameNode->GiveLexeme(),Types::BOOL,
                 size_counter.back())));
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),all.back().first,size_counter.back())));
+                new TIDElementVariable<char>(nameNode->GiveLexeme(),Types::CHAR,size_counter.back())));
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),all.back().first,size_counter.back())));
+                new TIDElementVariable<int>(nameNode->GiveLexeme(),Types::INT,size_counter.back())));
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
             tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),all.back().first,size_counter.back())));
+                new TIDElementVariable<double>(nameNode->GiveLexeme(),Types::DOUBLE,size_counter.back())));
                 size_counter.back() += sizeof(double);
         }
         // Nothing was pushed to 'all' for a plain declaration.

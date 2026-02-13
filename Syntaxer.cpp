@@ -775,7 +775,6 @@ SyntaxerNode* Syntaxer::ExprRel(){
 
 SyntaxerNode* Syntaxer::ExprAdd(){
     SyntaxerNode* tmp = ExprMul();
-
     while(lexer.currentToken().lexeme == "+" ||
         lexer.currentToken().lexeme == "-"){
             std::string op = lexer.currentToken().lexeme;
@@ -854,8 +853,9 @@ SyntaxerNode* Syntaxer::ExprUnary(){
             throw BuildSemanticError1(all.back(),{Types::INT,0},tmp);
         }
         tmp->AddChildren(cur);
-        return tmp;
         poliz.AddEl({POLIZ_Element::UNARY_OPERATION,op});
+
+        return tmp;
     }
     return ExprPrimary();
 }

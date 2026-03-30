@@ -1,6 +1,6 @@
 set(TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/program)
 set(EXPECTED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/expected)
-set(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR})
+
 
 file(GLOB TEST_FILES CONFIGURE_DEPENDS ${TEST_DIR}/*.txt)
 
@@ -9,7 +9,8 @@ foreach(test_file ${TEST_FILES})
 
     add_test(
         NAME ${test_name}
-        COMMAND sh -c "$<TARGET_FILE:MyLang> ${test_file} > ${OUTPUT}/actual_output.txt; diff ${OUTPUT}/actual_output.txt ${EXPECTED_DIR}/${test_name}.txt"
+        COMMAND sh -c "$<TARGET_FILE:MyLang> ${test_file} > ${CMAKE_CURRENT_SOURCE_DIR}/LangOutput/${test_name}.txt; 
+        diff ${CMAKE_CURRENT_SOURCE_DIR}/LangOutput/${test_name}.txt ${EXPECTED_DIR}/${test_name}.txt"
     )
 
     set_tests_properties(${test_name} PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

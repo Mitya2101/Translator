@@ -1,4 +1,4 @@
-#include "SyntaxerNode.h"
+#include "Syntaxer/SyntaxerNode.h"
 #include<iostream>
 #include<cassert>
 

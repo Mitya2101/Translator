@@ -59,4 +59,3 @@ public:
         return poliz_.size();
     }
 };
-

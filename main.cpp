@@ -1,5 +1,5 @@
-#include "Syntaxer.h"
-#include "vm.h"
+#include "Syntaxer/Syntaxer.h"
+#include "VirtualMachine/vm.h"
 
 #include <filesystem>
 #include <iostream>

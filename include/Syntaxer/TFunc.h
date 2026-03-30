@@ -1,5 +1,5 @@
 #pragma once
-#include "SyntaxerNode.h"
+#include "Syntaxer/SyntaxerNode.h"
 #include<vector>
 #include "TID.h"
 

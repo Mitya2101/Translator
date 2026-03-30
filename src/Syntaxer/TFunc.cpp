@@ -1,4 +1,4 @@
-#include "TFunc.h"
+#include "Syntaxer/TFunc.h"
 
 std::string TypeToString1(Types a){
     if(a == Types::BOOL){

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "POLIZ.h"
-#include "TFunc.h"
+#include "Syntaxer/POLIZ.h"
+#include "Syntaxer/TFunc.h"
 
 #include <cstdint>
 #include <cstring>

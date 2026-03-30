@@ -19,3 +19,11 @@ add_executable(MyLang
 )
 
 target_include_directories(MyLang PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+configure_file(${CMAKE_SOURCE_DIR}/keywords.txt
+               ${CMAKE_BINARY_DIR}/keywords.txt
+               COPYONLY)
+
+
+enable_testing()
+add_subdirectory(tests)
+

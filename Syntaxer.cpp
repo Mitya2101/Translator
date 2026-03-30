@@ -6,29 +6,31 @@ Types StringToType(std::string a){
     if(a == "int"){
         return Types::INT;
     }
-    if(a == "double"){
+    else if(a == "double"){
         return Types::DOUBLE;
     }
-    if(a == "bool"){
+    else if(a == "bool"){
         return Types::BOOL;
+    }else if(a == "char"){
+        return Types::CHAR;
     }
-    return Types::CHAR;
+    throw "Unknown type - " + a; 
 }
 
 std::string TypeToString(Types a){
     if(a == Types::BOOL){
         return "bool";
     }
-    if(a == Types::CHAR){
+    else if(a == Types::CHAR){
         return "char";
     }
-    if(a == Types::DOUBLE){
+    else if(a == Types::DOUBLE){
         return "double";
     }
-    if(a == Types::INT){
+    else if(a == Types::INT){
         return "int";
     }
-    if(a == Types::VOID){
+    else if(a == Types::VOID){
         return "void";
     }
     return "";
@@ -62,13 +64,13 @@ SyntaxerNode* Syntaxer::Start(){
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     tids.push_back({});
     size_counter.push_back(0);
-    SyntaxerNode* ty = Program();
+    SyntaxerNode* root_node = Program();
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back())},ind);
     poliz.AddEl({POLIZ_Element::FREE,std::to_string(size_counter.back())});
     size_counter.pop_back();
     poliz.AddEl({POLIZ_Element::END_OF_PROGRAM,""});
-    return ty;
+    return root_node;
 }
 
 

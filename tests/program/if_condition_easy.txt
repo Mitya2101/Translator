@@ -1,0 +1,7 @@
+int a = 5;
+int b = 54;
+if(b > a){
+    print(b);
+}else{
+    print(a);
+}

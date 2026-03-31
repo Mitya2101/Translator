@@ -50,7 +50,7 @@ class Syntaxer{
 public:
     explicit Syntaxer(const std::string& sourceName);
 
-    SyntaxerNode* Start();
+    std::shared_ptr<SyntaxerNode> Start();
 
     Lexer lexer;
     POLIZ poliz;
@@ -66,52 +66,52 @@ public:
     bool InCycle = false;
     int InFunction = -1;
     std::string cur_function_name_;
-    std::vector<TIDElement*> cur_func;
+    std::vector<std::shared_ptr<TIDElement>> cur_func;
     void PrintPoliz();
 
 private:
-    SyntaxerNode* Program();
-    SyntaxerNode* ProgramNoCreateFunction(bool need);
+    std::shared_ptr<SyntaxerNode> Program();
+    std::shared_ptr<SyntaxerNode> ProgramNoCreateFunction(bool need);
 
-    SyntaxerNode* Statement();
-    SyntaxerNode* StatementNoCreationFunction();
+    std::shared_ptr<SyntaxerNode> Statement();
+    std::shared_ptr<SyntaxerNode> StatementNoCreationFunction();
 
-    SyntaxerNode* If();
-    SyntaxerNode* Else();
-    SyntaxerNode* While();
-    SyntaxerNode* For();
+    std::shared_ptr<SyntaxerNode> If();
+    std::shared_ptr<SyntaxerNode> Else();
+    std::shared_ptr<SyntaxerNode> While();
+    std::shared_ptr<SyntaxerNode> For();
 
-    SyntaxerNode* Return();
-    SyntaxerNode* Break();
-    SyntaxerNode* Continue();
+    std::shared_ptr<SyntaxerNode> Return();
+    std::shared_ptr<SyntaxerNode> Break();
+    std::shared_ptr<SyntaxerNode> Continue();
 
-    SyntaxerNode* StringWithDigit();
-    SyntaxerNode* Variable();
-    SyntaxerNode* Value();
-    SyntaxerNode* DoubleValue();
-    SyntaxerNode* Type();
+    std::shared_ptr<SyntaxerNode> StringWithDigit();
+    std::shared_ptr<SyntaxerNode> Variable();
+    std::shared_ptr<SyntaxerNode> Value();
+    std::shared_ptr<SyntaxerNode> DoubleValue();
+    std::shared_ptr<SyntaxerNode> Type();
 
-    SyntaxerNode* CreateVariableOrArray();
-    SyntaxerNode* CreateFunctionOrVariableOrArray();
+    std::shared_ptr<SyntaxerNode> CreateVariableOrArray();
+    std::shared_ptr<SyntaxerNode> CreateFunctionOrVariableOrArray();
 
-    SyntaxerNode* Expr();
-    SyntaxerNode* ExprAssign();
-    SyntaxerNode* ExprLogicOr();
-    SyntaxerNode* ExprLogicAnd();
-    SyntaxerNode* ExprEquality();
-    SyntaxerNode* ExprRel();
-    SyntaxerNode* ExprAdd();
-    SyntaxerNode* ExprMul();
-    SyntaxerNode* ExprPostfix();
-    SyntaxerNode* ExprUnary();
-    SyntaxerNode* ExprPrimary();
+    std::shared_ptr<SyntaxerNode> Expr();
+    std::shared_ptr<SyntaxerNode> ExprAssign();
+    std::shared_ptr<SyntaxerNode> ExprLogicOr();
+    std::shared_ptr<SyntaxerNode> ExprLogicAnd();
+    std::shared_ptr<SyntaxerNode> ExprEquality();
+    std::shared_ptr<SyntaxerNode> ExprRel();
+    std::shared_ptr<SyntaxerNode> ExprAdd();
+    std::shared_ptr<SyntaxerNode> ExprMul();
+    std::shared_ptr<SyntaxerNode> ExprPostfix();
+    std::shared_ptr<SyntaxerNode> ExprUnary();
+    std::shared_ptr<SyntaxerNode> ExprPrimary();
 
-    SyntaxerNode* ArgList();
-    SyntaxerNode* ArgListType();
+    std::shared_ptr<SyntaxerNode> ArgList();
+    std::shared_ptr<SyntaxerNode> ArgListType();
 
     bool Find(std::string name);
-    TIDElement* Give(std::string name);
+    std::shared_ptr<TIDElement> Give(std::string name);
 
 
-    int dfs(SyntaxerNode* now);
+    int dfs(const std::shared_ptr<SyntaxerNode>& now);
 };

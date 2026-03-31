@@ -2,12 +2,12 @@
 #include<iostream>
 #include<cassert>
 
-SyntaxerNode** SyntaxerNode::GiveChildrens(){
+std::vector<std::shared_ptr<SyntaxerNode>> SyntaxerNode::GiveChildrens(){
     return childrens_;
 }
 
 int SyntaxerNode::GiveSize(){
-    return size;
+    return childrens_.size();
 }
 
 Token SyntaxerNode::GiveToken(){
@@ -19,11 +19,8 @@ std::string SyntaxerNode::GiveLexeme(){
 }
 
 
-void SyntaxerNode::AddChildren(SyntaxerNode* now){
-    if(size == capacity){
-        resize();
-    }
-    childrens_[size++] = now;
+void SyntaxerNode::AddChildren(const std::shared_ptr<SyntaxerNode>& now){
+    childrens_.push_back(now);
 }
 
 void SyntaxerNode::UpdateLexeme(std::string now){

@@ -19,7 +19,7 @@ std::string TypeToString1(Types a){
     return "";
 }
 
-std::string UpdateName(std::string name,std::vector<TIDElement*> param){
+std::string UpdateName(std::string name,std::vector<std::shared_ptr<TIDElement>> param){
     name += " ";
     for(int i = 0;i < param.size();i++){
         name += TypeToString1(param[i]->GiveType());
@@ -31,7 +31,7 @@ std::string UpdateName(std::string name,std::vector<TIDElement*> param){
 
 
 TFuncElement::TFuncElement(std::string name,
-    std::vector<TIDElement*> param_types,Types return_value,SyntaxerNode* create,int size,int poliz_index)
+    std::vector<std::shared_ptr<TIDElement>> param_types,Types return_value,std::shared_ptr<SyntaxerNode> create,int size,int poliz_index)
     :name_(UpdateName(name,param_types)),
 param_types_(param_types),return_value_(return_value),create_(create),size_(size),poliz_index(poliz_index){};
 
@@ -43,7 +43,7 @@ std::string TFuncElement::GiveName(){
     return name_;
 }
 
-std::vector<TIDElement*> TFuncElement::GiveParam(){
+std::vector<std::shared_ptr<TIDElement>> TFuncElement::GiveParam(){
     return param_types_;
 }
 
@@ -51,7 +51,7 @@ Types TFuncElement::GiveReturnValue(){
     return return_value_;
 }
 
-SyntaxerNode* TFuncElement::GiveCreate(){
+const std::shared_ptr<SyntaxerNode>& TFuncElement::GiveCreate(){
     return create_;
 }
 

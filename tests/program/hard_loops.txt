@@ -1,0 +1,8 @@
+int d = 0;
+int n = 12;
+for(int i = 2;i * i <= n;i = i + 1){
+    if(n % i == 0){
+        d = i;
+    }
+}
+print(d);

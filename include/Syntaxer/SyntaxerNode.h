@@ -7,27 +7,16 @@ class SyntaxerNode{
     public:
 
         Token GiveToken();
-        void AddChildren(SyntaxerNode* now);
+        void AddChildren(const std::shared_ptr<SyntaxerNode>& now);
         void UpdateType(Token::Type a);
         void UpdateLexeme(std::string now);
         Position GivePosition();
         std::string GiveLexeme();
         void UpdatePos(Position a);
-        SyntaxerNode** GiveChildrens();
+        std::vector<std::shared_ptr<SyntaxerNode>> GiveChildrens();
         int GiveSize();
-
-        void resize(){
-            SyntaxerNode** new_childs = new SyntaxerNode*[capacity* 2];
-            capacity *= 2;
-            for(int i =0 ;i < size;i++){
-                new_childs[i] = childrens_[i];
-            }
-            childrens_ = new_childs;
-        }
     private:
         Token cur_;
-        SyntaxerNode** childrens_ = new SyntaxerNode*[1];
-        int size = 0;
-        int capacity = 1;
+        std::vector<std::shared_ptr<SyntaxerNode>> childrens_;
 };
     

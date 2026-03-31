@@ -1,0 +1,12 @@
+
+int FirstDivision(int d){
+    for(int i = 2;i * i <= d;i = i + 1){
+        if(d % i == 0){
+            return i;
+        }
+    }
+    return d;
+}
+
+
+print(FirstDivision(5));

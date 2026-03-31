@@ -38,33 +38,33 @@ std::string TypeToString(Types a){
 
 
 Syntaxer::Syntaxer(const std::string& sourceName):lexer(sourceName){
-    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<int>("a",Types::INT,0,false)},
+    func.CreateFunc(TFuncElement("read",{std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>("a",Types::INT,0,false))},
     Types::VOID,nullptr,0,0));
-    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<bool>("a",Types::BOOL,0,false)},
+    func.CreateFunc(TFuncElement("read",{std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>("a",Types::BOOL,0,false))},
     Types::VOID,nullptr,0,0));
-    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<char>("a",Types::CHAR,0,false)},
+    func.CreateFunc(TFuncElement("read",{std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>("a",Types::CHAR,0,false))},
     Types::VOID,nullptr,0,0));
-    func.CreateFunc(TFuncElement("read",{new TIDElementVariable<double>("a",Types::DOUBLE,0,false)},
+    func.CreateFunc(TFuncElement("read",{std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>("a",Types::DOUBLE,0,false))},
     Types::VOID,nullptr,0,0));
 
-    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<int>("a",Types::INT,0,false)},
+    func.CreateFunc(TFuncElement("print",{std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>("a",Types::INT,0,false))},
     Types::VOID,nullptr,0,0));
-    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<bool>("a",Types::BOOL,0,false)},
+    func.CreateFunc(TFuncElement("print",{std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>("a",Types::BOOL,0,false))},
     Types::VOID,nullptr,0,0));
-    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<char>("a",Types::CHAR,0,false)},
+    func.CreateFunc(TFuncElement("print",{std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>("a",Types::CHAR,0,false))},
     Types::VOID,nullptr,0,0));
-    func.CreateFunc(TFuncElement("print",{new TIDElementVariable<double>("a",Types::DOUBLE,0,false)},
+    func.CreateFunc(TFuncElement("print",{std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>("a",Types::DOUBLE,0,false))},
     Types::VOID,nullptr,0,0));
 }
 
 
-SyntaxerNode* Syntaxer::Start(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Start(){
     int ind = poliz.GiveSize();
     size_counter.push_back(0);
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     tids.push_back({});
     size_counter.push_back(0);
-    SyntaxerNode* root_node = Program();
+    std::shared_ptr<SyntaxerNode> root_node = Program();
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back())},ind);
     poliz.AddEl({POLIZ_Element::FREE,std::to_string(size_counter.back())});
@@ -74,7 +74,7 @@ SyntaxerNode* Syntaxer::Start(){
 }
 
 
-int Syntaxer::dfs(SyntaxerNode* now){
+int Syntaxer::dfs(const std::shared_ptr<SyntaxerNode>& now){
     if(now->GiveToken().type == Token::Type::IntegerLiteral){
         return std::stoi(now->GiveLexeme());
     }
@@ -161,7 +161,7 @@ std::string GiveType(Types b){
     return "int";
 }
 
-std::string BuildSemanticError1(std::pair<Types,int> a,std::pair<Types,int> b,SyntaxerNode* help){
+std::string BuildSemanticError1(std::pair<Types,int> a,std::pair<Types,int> b,const std::shared_ptr<SyntaxerNode>& help){
     return "You have different types in " + std::to_string(help->GivePosition().line) + " line and " + 
     std::to_string(help->GivePosition().line) + ". Have " + 
     GiveType(a.first) + " and " + std::to_string(a.second) + " dimensional" + ", but excepted " +GiveType(b.first) + 
@@ -169,8 +169,8 @@ std::string BuildSemanticError1(std::pair<Types,int> a,std::pair<Types,int> b,Sy
 }
 
 
-SyntaxerNode* Syntaxer::If(){
-    SyntaxerNode* if_node = new SyntaxerNode();
+std::shared_ptr<SyntaxerNode> Syntaxer::If(){
+    std::shared_ptr<SyntaxerNode> if_node(new SyntaxerNode());
     if_node->UpdateLexeme(lexer.currentToken().lexeme);
     if_node->UpdateType(lexer.currentToken().type);
     if_node->UpdatePos(lexer.currentToken().pos);
@@ -184,7 +184,7 @@ SyntaxerNode* Syntaxer::If(){
     }
     lexer.next();
 
-    SyntaxerNode* expr = Expr();
+    std::shared_ptr<SyntaxerNode> expr = Expr();
 
     int ind2 = poliz.GiveSize();
     poliz.AddEl({POLIZ_Element::POLIZ_LABEL,std::to_string(0)});
@@ -212,7 +212,7 @@ SyntaxerNode* Syntaxer::If(){
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     size_counter.push_back(size_counter.back());
 
-    SyntaxerNode* program = ProgramNoCreateFunction(true);
+    std::shared_ptr<SyntaxerNode> program = ProgramNoCreateFunction(true);
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
         size_counter[size_counter.size() - 2])},ind_help);
@@ -239,10 +239,10 @@ SyntaxerNode* Syntaxer::If(){
         Position now = lexer.currentToken().pos;
         lexer.next();
         if(lexer.currentToken().lexeme == "if"){
-            SyntaxerNode* if_node_1 = If();
+            std::shared_ptr<SyntaxerNode> if_node_1 = If();
             if_node->AddChildren(if_node_1);
         }else if(lexer.currentToken().lexeme == "{"){
-            SyntaxerNode* end_node = Else();
+            std::shared_ptr<SyntaxerNode> end_node = Else();
             end_node->UpdatePos(now);
             if_node->AddChildren(end_node);
         }else{
@@ -256,7 +256,7 @@ SyntaxerNode* Syntaxer::If(){
 }
 
 
-SyntaxerNode* Syntaxer::Else(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Else(){
     if(lexer.currentToken().lexeme != "{"){
         throw BuildError({"{"},lexer.currentToken());
     }
@@ -267,7 +267,7 @@ SyntaxerNode* Syntaxer::Else(){
     int ind = poliz.GiveSize();
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
 
-    SyntaxerNode* else_node = ProgramNoCreateFunction(true);
+    std::shared_ptr<SyntaxerNode> else_node = ProgramNoCreateFunction(true);
 
     poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
         size_counter[size_counter.size() - 2])},ind);
@@ -283,12 +283,12 @@ SyntaxerNode* Syntaxer::Else(){
 }
 
 
-SyntaxerNode* Syntaxer::Return(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Return(){
     if(lexer.currentToken().lexeme != "return"){
         throw BuildError({"return"},lexer.currentToken());
     }
 
-    SyntaxerNode* return_node = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> return_node(new SyntaxerNode());
 
     return_node->UpdateLexeme("return");
     return_node->UpdateType(Token::Type::KwReturn);
@@ -310,7 +310,7 @@ SyntaxerNode* Syntaxer::Return(){
         poliz.AddEl({POLIZ_Element::POLIZ_GO,""});
         return return_node;
     }
-    SyntaxerNode* tu = Expr();
+    std::shared_ptr<SyntaxerNode> tu = Expr();
     if(func.Get(InFunction).GiveReturnValue() != all.back().first 
     || func.Get(InFunction).GiveArraySize() != all.back().second){
         throw "Return in function " + func.Get(InFunction).GiveName() + 
@@ -337,12 +337,12 @@ SyntaxerNode* Syntaxer::Return(){
     return return_node;
 }
 
-SyntaxerNode* Syntaxer::Break(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Break(){
     helper_break.back().push_back(poliz.GiveSize());
     if(lexer.currentToken().lexeme != "break"){
         throw BuildError({"break"},lexer.currentToken());
     }
-    SyntaxerNode* break_node = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> break_node(new SyntaxerNode());
 
     if(!InCycle){
         throw "Break is not in cycle";
@@ -363,12 +363,12 @@ SyntaxerNode* Syntaxer::Break(){
     return break_node;
 }
 
-SyntaxerNode* Syntaxer::Continue(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Continue(){
     continue_helper.back().push_back(poliz.GiveSize());
     if(lexer.currentToken().lexeme != "continue"){
         throw BuildError({"continue"},lexer.currentToken());
     }
-    SyntaxerNode* continue_node = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> continue_node(new SyntaxerNode());
 
     if(!InCycle){
         throw "Continue is not in cycle";
@@ -392,8 +392,8 @@ SyntaxerNode* Syntaxer::Continue(){
 }
 
 
-SyntaxerNode* Syntaxer::While(){
-    SyntaxerNode* now = new SyntaxerNode();
+std::shared_ptr<SyntaxerNode> Syntaxer::While(){
+    std::shared_ptr<SyntaxerNode> now(new SyntaxerNode());
     helper_break.push_back({});
     continue_helper.push_back({});
 
@@ -412,7 +412,7 @@ SyntaxerNode* Syntaxer::While(){
 
     int ind_start = poliz.GiveSize();
 
-    SyntaxerNode* help = Expr();
+    std::shared_ptr<SyntaxerNode> help = Expr();
     now->AddChildren(help);
 
     int ind2 = poliz.GiveSize();
@@ -473,7 +473,7 @@ SyntaxerNode* Syntaxer::While(){
     return now;
 }
 
-SyntaxerNode* Syntaxer::Type(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Type(){
     if(lexer.currentToken().lexeme != "int" &&
     lexer.currentToken().lexeme != "double" &&
     lexer.currentToken().lexeme != "char" &&
@@ -481,7 +481,7 @@ SyntaxerNode* Syntaxer::Type(){
         throw BuildError({"int","bool","char","double"},
             lexer.currentToken());
     }
-    SyntaxerNode* now = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> now(new SyntaxerNode());
     now->UpdateLexeme(lexer.currentToken().lexeme);
     now->UpdateType(lexer.currentToken().type);
     now->UpdatePos(lexer.currentToken().pos);
@@ -489,7 +489,7 @@ SyntaxerNode* Syntaxer::Type(){
     return now;
 }
 
-SyntaxerNode* Syntaxer::Variable(){
+std::shared_ptr<SyntaxerNode> Syntaxer::Variable(){
     if(lexer.currentToken().lexeme == "int" || 
     lexer.currentToken().lexeme == "double" || 
     lexer.currentToken().lexeme == "bool" || 
@@ -506,7 +506,7 @@ SyntaxerNode* Syntaxer::Variable(){
     ){
         throw BuildError({"name of variable"},lexer.currentToken());
     }
-    SyntaxerNode* now = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> now(new SyntaxerNode());
     if(lexer.currentToken().type == Token::Type::EndOfFile){
         throw BuildError({"digit","char"},lexer.currentToken());
     }
@@ -520,8 +520,8 @@ SyntaxerNode* Syntaxer::Variable(){
     return now;
 }
 
-SyntaxerNode* Syntaxer::Value(){
-    SyntaxerNode* now = new SyntaxerNode();
+std::shared_ptr<SyntaxerNode> Syntaxer::Value(){
+    std::shared_ptr<SyntaxerNode> now(new SyntaxerNode());
     if(lexer.currentToken().type != Token::Type::IntegerLiteral){
         throw BuildError({"number"},lexer.currentToken());
     }
@@ -534,8 +534,8 @@ SyntaxerNode* Syntaxer::Value(){
     return now;
 }
 
-SyntaxerNode* Syntaxer::DoubleValue(){
-    SyntaxerNode* now = new SyntaxerNode();
+std::shared_ptr<SyntaxerNode> Syntaxer::DoubleValue(){
+    std::shared_ptr<SyntaxerNode> now(new SyntaxerNode());
     if(lexer.currentToken().type != Token::Type::IntegerLiteral &&
     lexer.currentToken().type != Token::Type::FloatLiteral){
         throw BuildError({"number","double number"},lexer.currentToken());
@@ -548,24 +548,22 @@ SyntaxerNode* Syntaxer::DoubleValue(){
 }
 
 
-SyntaxerNode* Syntaxer::Expr(){
-    SyntaxerNode* tmp = ExprAssign();
-    SyntaxerNode* last = tmp;
+std::shared_ptr<SyntaxerNode> Syntaxer::Expr(){
+    std::shared_ptr<SyntaxerNode> tmp = ExprAssign();
 
     
     while(lexer.currentToken().lexeme == ","){
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
         lexer.next();
         all.pop_back();
 
-        SyntaxerNode* cur = ExprAssign();
+        std::shared_ptr<SyntaxerNode> cur = ExprAssign();
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        last = cur;
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
 
 
         poliz.AddEl({POLIZ_Element::OPERATION,","});
@@ -574,11 +572,11 @@ SyntaxerNode* Syntaxer::Expr(){
 }
 
 template<typename T>
-TIDElementArray<T>* IsArray(TIDElement* a){
-    return dynamic_cast<TIDElementArray<T>*>(a);
+std::shared_ptr<TIDElementArray<T>> IsArray(std::shared_ptr<TIDElement> a){
+    return std::dynamic_pointer_cast<TIDElementArray<T>>(a);
 }
 
-Types CheckIsEqualTypeArray(TIDElement* a){
+Types CheckIsEqualTypeArray(std::shared_ptr<TIDElement> a){
     if(IsArray<bool>(a) != nullptr){
         return Types::BOOL;
     }
@@ -597,12 +595,12 @@ Types CheckIsEqualTypeArray(TIDElement* a){
 
 
 template<typename T>
-TIDElementVariable<T>* IsVariable(TIDElement* a){
-    return dynamic_cast<TIDElementVariable<T>*>(a);
+std::shared_ptr<TIDElementVariable<T>> IsVariable(std::shared_ptr<TIDElement> a){
+    return std::dynamic_pointer_cast<TIDElementVariable<T>>(a);
 }
 
 
-Types CheckIsEqualTypeVariable(TIDElement* a){
+Types CheckIsEqualTypeVariable(std::shared_ptr<TIDElement> a){
     if(IsVariable<bool>(a) != nullptr){
         return Types::BOOL;
     }
@@ -620,18 +618,18 @@ Types CheckIsEqualTypeVariable(TIDElement* a){
 
 
 
-SyntaxerNode* Syntaxer::ExprAssign(){
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprAssign(){
 
-    SyntaxerNode* tmp = ExprLogicOr();
+    std::shared_ptr<SyntaxerNode> tmp = ExprLogicOr();
 
     while(lexer.currentToken().lexeme == "="){
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
 
         lexer.next();
-        SyntaxerNode* cur = ExprLogicOr();
+        std::shared_ptr<SyntaxerNode> cur = ExprLogicOr();
         assert(all.size() > 1);
 
         if(all.back() != all[all.size() - 2]){
@@ -658,18 +656,18 @@ SyntaxerNode* Syntaxer::ExprAssign(){
        
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,"="});
     }
 
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprLogicOr(){
-    SyntaxerNode* tmp = ExprLogicAnd();
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprLogicOr(){
+    std::shared_ptr<SyntaxerNode> tmp = ExprLogicAnd();
 
     while(lexer.currentToken().lexeme == "||"){
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
@@ -681,26 +679,26 @@ SyntaxerNode* Syntaxer::ExprLogicOr(){
         else{
             all.pop_back();
         }
-        SyntaxerNode* cur = ExprLogicAnd();
+        std::shared_ptr<SyntaxerNode> cur = ExprLogicAnd();
         if(all.back().first != Types::BOOL || all.back().second != 0){
             throw BuildSemanticError1(all.back(),{Types::BOOL,0},tmp1);
         }
 
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,"||"});
     }
 
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprLogicAnd(){
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprLogicAnd(){
 
-    SyntaxerNode* tmp = ExprEquality();
+    std::shared_ptr<SyntaxerNode> tmp = ExprEquality();
 
     while(lexer.currentToken().lexeme == "&&"){
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
@@ -713,7 +711,7 @@ SyntaxerNode* Syntaxer::ExprLogicAnd(){
         else{
             all.pop_back();
         }
-        SyntaxerNode* cur = ExprEquality();
+        std::shared_ptr<SyntaxerNode> cur = ExprEquality();
         if(all.back().first != Types::BOOL || all.back().second != 0){
             throw BuildSemanticError1(all.back(),{Types::BOOL,0},tmp1);
         }
@@ -721,28 +719,28 @@ SyntaxerNode* Syntaxer::ExprLogicAnd(){
 
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,"&&"});
     }
 
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprEquality(){
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprEquality(){
 
-    SyntaxerNode* tmp = ExprRel();
+    std::shared_ptr<SyntaxerNode> tmp = ExprRel();
 
     while(lexer.currentToken().lexeme == "==" ||
         lexer.currentToken().lexeme == "!="){
         std::string op = lexer.currentToken().lexeme;
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
 
 
         lexer.next();
-        SyntaxerNode* cur = ExprRel();
+        std::shared_ptr<SyntaxerNode> cur = ExprRel();
         assert(all.size() > 1);
         if(all.back() != all[all.size() - 2]){
             throw BuildSemanticError1(all.back(),all[all.size() - 2],tmp1);
@@ -754,30 +752,30 @@ SyntaxerNode* Syntaxer::ExprEquality(){
 
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,op});
     }
 
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprRel(){
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprRel(){
 
-    SyntaxerNode* tmp = ExprAdd();
+    std::shared_ptr<SyntaxerNode> tmp = ExprAdd();
 
     while(lexer.currentToken().lexeme == "<=" ||
         lexer.currentToken().lexeme == ">=" ||
         lexer.currentToken().lexeme == "<" ||
         lexer.currentToken().lexeme == ">"){
             std::string op = lexer.currentToken().lexeme;
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
 
 
         lexer.next();
-        SyntaxerNode* cur = ExprAdd();
+        std::shared_ptr<SyntaxerNode> cur = ExprAdd();
         assert(all.size() > 1);
         if(all.back() != all[all.size() - 2]){
             throw BuildSemanticError1(all.back(),all[all.size() - 2],tmp1);
@@ -790,25 +788,25 @@ SyntaxerNode* Syntaxer::ExprRel(){
 
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,op});
     }
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprAdd(){
-    SyntaxerNode* tmp = ExprMul();
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprAdd(){
+    std::shared_ptr<SyntaxerNode> tmp = ExprMul();
     while(lexer.currentToken().lexeme == "+" ||
         lexer.currentToken().lexeme == "-"){
             std::string op = lexer.currentToken().lexeme;
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
 
 
         lexer.next();
-        SyntaxerNode* cur = ExprMul();
+        std::shared_ptr<SyntaxerNode> cur = ExprMul();
         assert(all.size() > 1);
         if(all.back() != all[all.size() - 2]){
             throw BuildSemanticError1(all.back(),
@@ -820,22 +818,22 @@ SyntaxerNode* Syntaxer::ExprAdd(){
 
         tmp1->AddChildren(tmp);
         tmp1->AddChildren(cur);
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,op});
     }
     
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprMul(){
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprMul(){
 
-    SyntaxerNode* tmp = ExprUnary();
+    std::shared_ptr<SyntaxerNode> tmp = ExprUnary();
 
     while(lexer.currentToken().lexeme == "*" ||
         lexer.currentToken().lexeme == "%" ||
         lexer.currentToken().lexeme == "/"){
         std::string op = lexer.currentToken().lexeme;
-        SyntaxerNode* tmp1 = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp1(new SyntaxerNode());
         tmp1->UpdateLexeme(lexer.currentToken().lexeme);
         tmp1->UpdateType(lexer.currentToken().type);
         tmp1->UpdatePos(lexer.currentToken().pos);
@@ -849,26 +847,26 @@ SyntaxerNode* Syntaxer::ExprMul(){
         }else{
             all.pop_back();
         }
-        tmp = tmp1;
+        std::swap(tmp,tmp1);
         poliz.AddEl({POLIZ_Element::OPERATION,op});
     }
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::ExprUnary(){
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprUnary(){
 
     if(lexer.currentToken().lexeme == "!" ||
     lexer.currentToken().lexeme == "-" ||
     lexer.currentToken().lexeme == "+"){
         std::string op = lexer.currentToken().lexeme;
-        SyntaxerNode* tmp = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> tmp(new SyntaxerNode());
 
         tmp->UpdateLexeme(lexer.currentToken().lexeme);
         tmp->UpdateType(lexer.currentToken().type);
         tmp->UpdatePos(lexer.currentToken().pos);
 
         lexer.next();
-        SyntaxerNode* cur = ExprPrimary();
+        std::shared_ptr<SyntaxerNode> cur = ExprPrimary();
         if(all.back().first == Types::CHAR || 
         all.back().first == Types::DOUBLE || 
         all.back().first == Types::VOID || all.back().second != 0){
@@ -885,8 +883,8 @@ SyntaxerNode* Syntaxer::ExprUnary(){
 
 
 
-SyntaxerNode* Syntaxer::ExprPrimary(){
-    SyntaxerNode* tmp = new SyntaxerNode();
+std::shared_ptr<SyntaxerNode> Syntaxer::ExprPrimary(){
+    std::shared_ptr<SyntaxerNode> tmp(new SyntaxerNode());
     if(lexer.currentToken().lexeme == "("){
         lexer.next();
         if(lexer.currentToken().lexeme == "int"){
@@ -895,7 +893,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
                 throw BuildError({")"},lexer.currentToken());
             }
             lexer.next();
-            SyntaxerNode* cur = Expr();
+            std::shared_ptr<SyntaxerNode> cur = Expr();
             if(all.back().second != 0 || all.back().first == Types::VOID){
                 throw "Incorrect type(can not do cast)";
             }
@@ -909,7 +907,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
                 throw BuildError({")"},lexer.currentToken());
             }
             lexer.next();
-            SyntaxerNode* cur = Expr();
+            std::shared_ptr<SyntaxerNode> cur = Expr();
             if(all.back().second != 0 || all.back().first == Types::VOID){
                 throw "Incorrect type(can not do cast)";
             }
@@ -923,7 +921,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
                 throw BuildError({")"},lexer.currentToken());
             }
             lexer.next();
-            SyntaxerNode* cur = Expr(); 
+            std::shared_ptr<SyntaxerNode> cur = Expr(); 
             if(all.back().second != 0 || all.back().first == Types::VOID){
                 throw "Incorrect type(can not do cast)";
             }
@@ -937,7 +935,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
                 throw BuildError({")"},lexer.currentToken());
             }
             lexer.next();
-            SyntaxerNode* cur = Expr();
+            std::shared_ptr<SyntaxerNode> cur = Expr();
             if(all.back().second != 0 || all.back().first == Types::VOID){
                 throw "Incorrect type(can not do cast)";
             }
@@ -947,7 +945,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             return cur;
         }
     
-        SyntaxerNode* cur = Expr();
+        std::shared_ptr<SyntaxerNode> cur = Expr();
         if(lexer.currentToken().lexeme != ")"){
             throw BuildError({")"},lexer.currentToken());
         }
@@ -1044,7 +1042,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
             int cnt = 0;
 
 
-            TIDElement* help1 = Give(name);
+            std::shared_ptr<TIDElement> help1 = Give(name);
             std::vector<int> all_sizes;
             int was = 0;
             int only_size = 0;
@@ -1138,7 +1136,7 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
         if(!Find(tmp->GiveLexeme())){
             throw tmp->GiveLexeme() + " - no such variable";
         }
-        TIDElement* help1 = Give(tmp->GiveLexeme());
+        std::shared_ptr<TIDElement> help1 = Give(tmp->GiveLexeme());
         // poliz.AddEl({POLIZ_Element::ADRESS,""});
         poliz.AddEl({POLIZ_Element::INT,std::to_string(help1->GiveOffset())});
         
@@ -1184,15 +1182,15 @@ SyntaxerNode* Syntaxer::ExprPrimary(){
     return tmp;
 }
 
-SyntaxerNode* Syntaxer::Program() {
+std::shared_ptr<SyntaxerNode> Syntaxer::Program() {
     tids.back().push_back(TID());
-    SyntaxerNode* root = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> root(new SyntaxerNode());
     root->UpdateLexeme("Program");
     root->UpdateType(Token::Type::Identifier);
     root->UpdatePos(lexer.currentToken().pos);
 
     while (lexer.currentToken().type != Token::Type::EndOfFile) {
-        SyntaxerNode* stmt = Statement();
+        std::shared_ptr<SyntaxerNode> stmt = Statement();
         root->UpdateLexeme("Program");
         root->AddChildren(stmt);
     }
@@ -1200,11 +1198,11 @@ SyntaxerNode* Syntaxer::Program() {
     return root;
 }
 
-SyntaxerNode* Syntaxer::ProgramNoCreateFunction(bool need) {
+std::shared_ptr<SyntaxerNode> Syntaxer::ProgramNoCreateFunction(bool need) {
     if(need){
         tids.back().push_back({TID()});
     }
-    SyntaxerNode* root = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> root(new SyntaxerNode());
     root->UpdateLexeme("ProgramNoCreateFunction");
     root->UpdateType(Token::Type::Identifier);
     root->UpdatePos(lexer.currentToken().pos);
@@ -1213,7 +1211,7 @@ SyntaxerNode* Syntaxer::ProgramNoCreateFunction(bool need) {
     while (lexer.currentToken().type != Token::Type::EndOfFile &&
            !(lexer.currentToken().lexeme == "}" &&
              lexer.currentToken().type == Token::Type::CloseBracket)) {
-        SyntaxerNode* stmt = StatementNoCreationFunction();
+        std::shared_ptr<SyntaxerNode> stmt = StatementNoCreationFunction();
         root->AddChildren(stmt);
     }
     if(need){
@@ -1221,7 +1219,7 @@ SyntaxerNode* Syntaxer::ProgramNoCreateFunction(bool need) {
     }
     return root;
 }
-SyntaxerNode* Syntaxer::Statement() {
+std::shared_ptr<SyntaxerNode> Syntaxer::Statement() {
 
     const Token& tok = lexer.currentToken();
     const std::string& lx = tok.lexeme;
@@ -1247,7 +1245,7 @@ SyntaxerNode* Syntaxer::Statement() {
 
 
     // иначе — просто выражение с точкой с запятой: <Expr> ";"
-    SyntaxerNode* expr = Expr();
+    std::shared_ptr<SyntaxerNode> expr = Expr();
     // Expr() should push its resulting type to 'all'. Guard against underflow
     // to avoid UB/heap corruption on malformed programs.
     if (!all.empty()) {
@@ -1275,7 +1273,7 @@ bool Syntaxer::Find(std::string name){
     return false;
 }
 
-TIDElement* Syntaxer::Give(std::string name){
+std::shared_ptr<TIDElement> Syntaxer::Give(std::string name){
     for(int i =tids.back().size() - 1;i >= 0;i--){
         if(tids.back()[i].Find(name)){
             return tids.back()[i].GetVar(name);
@@ -1284,7 +1282,7 @@ TIDElement* Syntaxer::Give(std::string name){
     throw BuildSemanticError(name);
 }
 
-SyntaxerNode* Syntaxer::StatementNoCreationFunction() {
+std::shared_ptr<SyntaxerNode> Syntaxer::StatementNoCreationFunction() {
     const Token& tok = lexer.currentToken();
     const std::string& lx = tok.lexeme;
 
@@ -1301,12 +1299,12 @@ SyntaxerNode* Syntaxer::StatementNoCreationFunction() {
 
     // Внутри блока запрещено объявлять функции, только переменные/массивы
     if (lx == "int" || lx == "double" || lx == "char" || lx == "bool") {
-        SyntaxerNode* decl = CreateVariableOrArray();
+        std::shared_ptr<SyntaxerNode> decl = CreateVariableOrArray();
         return decl;
     }
 
     // Просто выражение с ';'
-    SyntaxerNode* expr = Expr();
+    std::shared_ptr<SyntaxerNode> expr = Expr();
     if (lexer.currentToken().lexeme != ";") {
         throw BuildError({";"}, lexer.currentToken());
     }
@@ -1315,11 +1313,11 @@ SyntaxerNode* Syntaxer::StatementNoCreationFunction() {
     return expr;
 }
 
-SyntaxerNode* Syntaxer::CreateVariableOrArray() {
+std::shared_ptr<SyntaxerNode> Syntaxer::CreateVariableOrArray() {
     // <Type> <Variable> ("=" <Expr> | ("[" Expr "]", { "[" Expr "]" }))
-    SyntaxerNode* root = new SyntaxerNode();
-    SyntaxerNode* typeNode = Type();
-    SyntaxerNode* nameNode = Variable();
+    std::shared_ptr<SyntaxerNode> root(new SyntaxerNode());
+    std::shared_ptr<SyntaxerNode> typeNode = Type();
+    std::shared_ptr<SyntaxerNode> nameNode = Variable();
 
     root->UpdateLexeme("Decl");
     root->UpdateType(Token::Type::Identifier);
@@ -1338,40 +1336,41 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         lexer.next();
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
-                size_counter.back(),InFunction == -1)));
+                size_counter.back(),InFunction == -1))));
                 poliz.AddEl({POLIZ_Element::INT,std::to_string(size_counter.back())});
                 poliz.AddEl({POLIZ_Element::ADRESS_BOOL,""});
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme())== Types::CHAR){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
-                size_counter.back(),InFunction == -1)));
+                size_counter.back(),InFunction == -1))));
                 poliz.AddEl({POLIZ_Element::INT,std::to_string(size_counter.back())});
                 poliz.AddEl({POLIZ_Element::ADRESS_CHAR,""});
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),
-                StringToType(typeNode->GiveLexeme()),size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 poliz.AddEl({POLIZ_Element::INT,std::to_string(size_counter.back())});
                 poliz.AddEl({POLIZ_Element::ADRESS_INT,""});
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
-                size_counter.back(),InFunction == -1)));
+                size_counter.back(),InFunction == -1))));
                 poliz.AddEl({POLIZ_Element::INT,std::to_string(size_counter.back())});
                 poliz.AddEl({POLIZ_Element::ADRESS_DOUBLE,""});
                 size_counter.back() += sizeof(double);
         }
 
 
-        SyntaxerNode* expr = Expr();
+        std::shared_ptr<SyntaxerNode> expr = Expr();
 
         poliz.AddEl({POLIZ_Element::OPERATION,"="});
         
@@ -1399,21 +1398,28 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         // std::cout<<"dhf "<<all.size()<<std::endl;
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),Types::BOOL,
-                size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),Types::CHAR,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),Types::INT,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),Types::DOUBLE,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(double);
         }
         // Nothing was pushed to 'all' for a plain declaration.
@@ -1432,13 +1438,13 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         std::vector<int> sizes;
         while (lexer.currentToken().lexeme == "[") {
             lexer.next();
-            SyntaxerNode* dimExpr = Expr();
+            std::shared_ptr<SyntaxerNode> dimExpr = Expr();
             int tmp = dfs(dimExpr);
             sizes.push_back(tmp);
-            dimExpr = new SyntaxerNode();
-            dimExpr->UpdateLexeme(std::to_string(tmp));
-            dimExpr->UpdateType(Token::Type::IntegerLiteral);
-            dimExpr->UpdatePos(lexer.currentToken().pos);
+            std::shared_ptr<SyntaxerNode> tr(new SyntaxerNode());
+            tr->UpdateLexeme(std::to_string(tmp));
+            tr->UpdateType(Token::Type::IntegerLiteral);
+            tr->UpdatePos(lexer.currentToken().pos);
 
             if(tmp <= 0){
                 throw "Array size cannot be negative";
@@ -1458,20 +1464,26 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
         }
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(name,
-                Types::BOOL,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<bool>>(new TIDElementArray<bool>
+                    (name,Types::BOOL,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(bool) * now_size;
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<double>(name,
-                Types::DOUBLE,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<double>>(new TIDElementArray<double>
+                    (name,Types::DOUBLE,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(double) * now_size;
+
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<int>(name,
-                Types::INT,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<int>>(new TIDElementArray<int>
+                    (name,Types::INT,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(int) * now_size;
+
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new TIDElementArray<char>(name,
-                Types::CHAR,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<char>>(new TIDElementArray<char>
+                    (name,Types::CHAR,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(char) * now_size;
         }
 
@@ -1490,16 +1502,16 @@ SyntaxerNode* Syntaxer::CreateVariableOrArray() {
 
 
 
-SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
+std::shared_ptr<SyntaxerNode> Syntaxer::CreateFunctionOrVariableOrArray() {
     // <Type> <Variable> ( "(" ... | "=" Expr ";" | "[" Expr "]" ... ";" )
     if(lexer.currentToken().lexeme == "void"){
-        SyntaxerNode* root = new SyntaxerNode();
-        SyntaxerNode* typeNode = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> root(new SyntaxerNode());
+        std::shared_ptr<SyntaxerNode> typeNode(new SyntaxerNode());
         typeNode->UpdateLexeme("void");
         typeNode->UpdateType(lexer.currentToken().type);
         typeNode->UpdatePos(lexer.currentToken().pos);
         lexer.next();
-        SyntaxerNode* nameNode = Variable();
+        std::shared_ptr<SyntaxerNode> nameNode = Variable();
 
         cur_function_name_.clear();
         cur_func.clear();
@@ -1518,7 +1530,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         if (lx == "(") {
             lexer.next(); // съели '('
     
-            SyntaxerNode* params = new SyntaxerNode();
+            std::shared_ptr<SyntaxerNode> params(new SyntaxerNode());
             params->UpdateLexeme("Params");
             params->UpdateType(Token::Type::Identifier);
             params->UpdatePos(lexer.currentToken().pos);
@@ -1527,7 +1539,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             InFunction = func.GiveSize();
             size_counter.push_back(size_counter.back());
             if (lexer.currentToken().lexeme != ")") {
-                SyntaxerNode* list = ArgListType();
+                std::shared_ptr<SyntaxerNode> list = ArgListType();
                 params->AddChildren(list);
             }
 
@@ -1558,7 +1570,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             for(int i =0 ;i < cur_func.size();i++){
                 tids.back().back().CreateVar(cur_func[i]);
             }
-            SyntaxerNode* body = ProgramNoCreateFunction(true);
+            std::shared_ptr<SyntaxerNode> body = ProgramNoCreateFunction(true);
 
             poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
                 size_counter[size_counter.size() - 2])},ind_help);
@@ -1593,9 +1605,9 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
             throw BuildError({"("},lexer.currentToken());
         }
     }
-    SyntaxerNode* root = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> root(new SyntaxerNode());
     
-    SyntaxerNode* typeNode = Type();
+    std::shared_ptr<SyntaxerNode> typeNode = Type();
     int th = 0;
     while(lexer.currentToken().lexeme == "["){
         lexer.next();
@@ -1606,7 +1618,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         }
         lexer.next();
     }
-    SyntaxerNode* nameNode = Variable();
+    std::shared_ptr<SyntaxerNode> nameNode = Variable();
 
     root->UpdateLexeme("Decl");
     root->UpdateType(Token::Type::Identifier);
@@ -1627,7 +1639,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
 
 
 
-        SyntaxerNode* params = new SyntaxerNode();
+        std::shared_ptr<SyntaxerNode> params(new SyntaxerNode());
         params->UpdateLexeme("Params");
         params->UpdateType(Token::Type::Identifier);
         params->UpdatePos(lexer.currentToken().pos);
@@ -1641,7 +1653,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         int was = InFunction;
         InFunction = func.GiveSize();
         if (lexer.currentToken().lexeme != ")") {
-            SyntaxerNode* list = ArgListType();
+            std::shared_ptr<SyntaxerNode> list = ArgListType();
             params->AddChildren(list);
         }
 
@@ -1675,7 +1687,7 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         int ind = poliz.GiveSize();
         poliz.AddEl({POLIZ_Element::ALLOCATE,""});
 
-        SyntaxerNode* body = ProgramNoCreateFunction(true);
+        std::shared_ptr<SyntaxerNode> body = ProgramNoCreateFunction(true);
 
         poliz.UpdateEl({POLIZ_Element::ALLOCATE,std::to_string(size_counter.back() - 
             size_counter[size_counter.size() - 2])},ind);
@@ -1718,41 +1730,44 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         poliz.AddEl({POLIZ_Element::INT,std::to_string(size_counter.back())});
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
-                size_counter.back(),InFunction == -1)));
+                size_counter.back(),InFunction == -1))));
                 poliz.AddEl({POLIZ_Element::ADRESS_BOOL,""});
 
                 size_counter.back() += sizeof(bool);
         }else if(StringToType(typeNode->GiveLexeme())== Types::CHAR){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
-                size_counter.back(),InFunction == -1)));
+                size_counter.back(),InFunction == -1))));
                 poliz.AddEl({POLIZ_Element::ADRESS_CHAR,""});
 
                 size_counter.back() += sizeof(char);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),
-                StringToType(typeNode->GiveLexeme()),size_counter.back(),InFunction == -1)));
-                poliz.AddEl({POLIZ_Element::ADRESS_INT,""});
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
 
+
+                poliz.AddEl({POLIZ_Element::ADRESS_INT,""});
 
                 size_counter.back() += sizeof(int);
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>(nameNode->GiveLexeme(),
                 StringToType(typeNode->GiveLexeme()),
-                size_counter.back(),InFunction == -1)));
+                size_counter.back(),InFunction == -1))));
+
                 poliz.AddEl({POLIZ_Element::ADRESS_DOUBLE,""});
 
                 size_counter.back() += sizeof(double);
         }
 
 
-        SyntaxerNode* expr = Expr();
+        std::shared_ptr<SyntaxerNode> expr = Expr();
 
         poliz.AddEl({POLIZ_Element::OPERATION,"="});
         
@@ -1782,20 +1797,28 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         const Types declared = StringToType(typeNode->GiveLexeme());
 
         if(declared == Types::BOOL){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<bool>(nameNode->GiveLexeme(),declared,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(bool);
         }else if(declared == Types::CHAR){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<char>(nameNode->GiveLexeme(),declared,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(char);
         }else if(declared == Types::INT){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<int>(nameNode->GiveLexeme(),declared,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(int);
         }else if(declared == Types::DOUBLE){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementVariable<double>(nameNode->GiveLexeme(),declared, size_counter.back(),InFunction == -1)));     
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>(nameNode->GiveLexeme(),
+                StringToType(typeNode->GiveLexeme()),
+                size_counter.back(),InFunction == -1))));   
                 size_counter.back() += sizeof(double);
         }
         // all.pop_back();
@@ -1814,13 +1837,13 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         std::vector<int> sizes;
         while (lexer.currentToken().lexeme == "[") {
             lexer.next();
-            SyntaxerNode* dimExpr = Expr();
+            std::shared_ptr<SyntaxerNode> dimExpr = Expr();
 
             int tmp = dfs(dimExpr);
-            dimExpr = new SyntaxerNode();
-            dimExpr->UpdateLexeme(std::to_string(tmp));
-            dimExpr->UpdateType(Token::Type::IntegerLiteral);
-            dimExpr->UpdatePos(lexer.currentToken().pos);
+           std::shared_ptr<SyntaxerNode> tr(new SyntaxerNode());
+            tr->UpdateLexeme(std::to_string(tmp));
+            tr->UpdateType(Token::Type::IntegerLiteral);
+            tr->UpdatePos(lexer.currentToken().pos);
 
 
             sizes.push_back(tmp);
@@ -1841,22 +1864,26 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
         }
 
         if(StringToType(typeNode->GiveLexeme()) == Types::BOOL){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>
-                (new TIDElementArray<bool>(name,Types::BOOL,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<bool>>(new TIDElementArray<bool>
+                    (name,Types::BOOL,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(bool) * now_size;
         }else if(StringToType(typeNode->GiveLexeme()) == Types::DOUBLE){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementArray<double>(name,Types::DOUBLE,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<double>>(new TIDElementArray<double>
+                    (name,Types::DOUBLE,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(double) * now_size;
 
         }else if(StringToType(typeNode->GiveLexeme()) == Types::INT){
-            tids.back().back().CreateVar(dynamic_cast<TIDElement*>(
-                new TIDElementArray<int>(name,Types::INT,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<int>>(new TIDElementArray<int>
+                    (name,Types::INT,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(int) * now_size;
 
         }else if(StringToType(typeNode->GiveLexeme()) == Types::CHAR){
-        tids.back().back().CreateVar(dynamic_cast<TIDElement*>(new 
-            TIDElementArray<char>(name,Types::CHAR,sizes,size_counter.back(),InFunction == -1)));
+            tids.back().back().CreateVar(std::dynamic_pointer_cast<TIDElement>(
+                std::shared_ptr<TIDElementArray<char>>(new TIDElementArray<char>
+                    (name,Types::CHAR,sizes,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(char) * now_size;
         }
 
@@ -1883,16 +1910,16 @@ SyntaxerNode* Syntaxer::CreateFunctionOrVariableOrArray() {
 
     throw BuildError({"(","=","["}, lexer.currentToken());
 }
-SyntaxerNode* Syntaxer::ArgListType() {
+std::shared_ptr<SyntaxerNode> Syntaxer::ArgListType() {
     // std::cout<<InFunction<<std::endl;
     // <Type> <Variable> { "," <Type> <Variable> }
-    SyntaxerNode* list = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> list(new SyntaxerNode());
     list->UpdateLexeme("ArgListType");
     list->UpdateType(Token::Type::Identifier);
     list->UpdatePos(lexer.currentToken().pos);
 
-    auto makeParam = [this](SyntaxerNode* t, SyntaxerNode* v) {
-        SyntaxerNode* p = new SyntaxerNode();
+    auto makeParam = [this](std::shared_ptr<SyntaxerNode> t, std::shared_ptr<SyntaxerNode> v) {
+        std::shared_ptr<SyntaxerNode> p(new SyntaxerNode());
         p->UpdateLexeme("Param");
         p->UpdateType(Token::Type::Identifier);
         p->UpdatePos(t->GiveToken().pos);
@@ -1901,7 +1928,7 @@ SyntaxerNode* Syntaxer::ArgListType() {
         return p;
     };
 
-    SyntaxerNode* t = Type();
+    std::shared_ptr<SyntaxerNode> t = Type();
     int cnt = 0;
     while(lexer.currentToken().lexeme == "["){
         lexer.next();
@@ -1912,7 +1939,7 @@ SyntaxerNode* Syntaxer::ArgListType() {
         }
         lexer.next();
     }
-    SyntaxerNode* v = Variable();
+    std::shared_ptr<SyntaxerNode> v = Variable();
     std::string now = v->GiveLexeme();
     cur_function_name_ += " ";
     cur_function_name_ += t->GiveLexeme();
@@ -1922,32 +1949,39 @@ SyntaxerNode* Syntaxer::ArgListType() {
         // Address type in this project is represented as int.
         Types tr = StringToType(t->GiveLexeme());
         if(t->GiveLexeme() == "int"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<int>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<int>>(new TIDElementArray<int>(now,tr,cnt,size_counter.back(),InFunction == -1))));
             size_counter.back() += sizeof(int);
         }else if(t->GiveLexeme() == "double"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<double>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<double>>(new TIDElementArray<double>(now,tr,cnt,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(int);
         }else if(t->GiveLexeme() == "bool"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<bool>>(new TIDElementArray<bool>(now,tr,cnt,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(int);
         }else if(t->GiveLexeme() == "char"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<char>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<char>>(new TIDElementArray<char>(now,tr,cnt,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(int);
         }
     }else{
         // Scalar parameter: store tightly packed values (byte offsets).
         Types tr = StringToType(t->GiveLexeme());
         if(t->GiveLexeme() == "int"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<int>(now,tr,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>(now,tr,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(int);
         }else if(t->GiveLexeme() == "double"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<double>(now,tr,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>(now,tr,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(double);
         }else if(t->GiveLexeme() == "bool"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<bool>(now,tr,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>(now,tr,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(bool);
         }else if(t->GiveLexeme() == "char"){
-            cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<char>(now,tr,size_counter.back(),InFunction == -1)));
+            cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>(now,tr,size_counter.back(),InFunction == -1))));
+            
             size_counter.back() += sizeof(char);
         }
     }
@@ -1955,7 +1989,7 @@ SyntaxerNode* Syntaxer::ArgListType() {
 
     while (lexer.currentToken().lexeme == ",") {
         lexer.next(); // ','
-        SyntaxerNode* t2 = Type();
+        std::shared_ptr<SyntaxerNode> t2 = Type();
         cnt = 0;
         while(lexer.currentToken().lexeme == "["){
             lexer.next();
@@ -1966,42 +2000,49 @@ SyntaxerNode* Syntaxer::ArgListType() {
             }
             lexer.next();
         }
-        SyntaxerNode* v2 = Variable();
+        std::shared_ptr<SyntaxerNode> v2 = Variable();
         now = v2->GiveLexeme();
         cur_function_name_ += " ";
         cur_function_name_ += t2->GiveLexeme();
         v2->UpdateLexeme(now);
         if(cnt != 0){
-            // Array parameter: store a pointer (address) in the call frame.
+            // Array parameter: we store a pointer (address) in the call frame.
+            // Address type in this project is represented as int.
             Types tr = StringToType(t2->GiveLexeme());
             if(t2->GiveLexeme() == "int"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<int>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<int>>(new TIDElementArray<int>(now,tr,cnt,size_counter.back(),InFunction == -1))));
                 size_counter.back() += sizeof(int);
             }else if(t2->GiveLexeme() == "double"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<double>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<double>>(new TIDElementArray<double>(now,tr,cnt,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(int);
             }else if(t2->GiveLexeme() == "bool"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<bool>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<bool>>(new TIDElementArray<bool>(now,tr,cnt,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(int);
             }else if(t2->GiveLexeme() == "char"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementArray<char>(now,tr,cnt,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementArray<char>>(new TIDElementArray<char>(now,tr,cnt,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(int);
             }
         }else{
-            // Scalar parameter: tightly packed values.
+            // Scalar parameter: store tightly packed values (byte offsets).
             Types tr = StringToType(t2->GiveLexeme());
             if(t2->GiveLexeme() == "int"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<int>(now,tr,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<int>>(new TIDElementVariable<int>(now,tr,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(int);
             }else if(t2->GiveLexeme() == "double"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<double>(now,tr,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<double>>(new TIDElementVariable<double>(now,tr,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(double);
-
             }else if(t2->GiveLexeme() == "bool"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<bool>(now,tr,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<bool>>(new TIDElementVariable<bool>(now,tr,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(bool);
             }else if(t2->GiveLexeme() == "char"){
-                cur_func.push_back(dynamic_cast<TIDElement*>(new TIDElementVariable<char>(now,tr,size_counter.back(),InFunction == -1)));
+                cur_func.push_back(std::dynamic_pointer_cast<TIDElement>(std::shared_ptr<TIDElementVariable<char>>(new TIDElementVariable<char>(now,tr,size_counter.back(),InFunction == -1))));
+                
                 size_counter.back() += sizeof(char);
             }
         }
@@ -2011,30 +2052,30 @@ SyntaxerNode* Syntaxer::ArgListType() {
     return list;
 }
 
-SyntaxerNode* Syntaxer::ArgList() {
+std::shared_ptr<SyntaxerNode> Syntaxer::ArgList() {
     // <ExprAssign> { "," <ExprAssign> }
-    SyntaxerNode* list = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> list(new SyntaxerNode());
     list->UpdateLexeme("ArgList");
     list->UpdateType(Token::Type::Identifier);
     list->UpdatePos(lexer.currentToken().pos);
 
-    SyntaxerNode* first = ExprAssign();
+    std::shared_ptr<SyntaxerNode> first = ExprAssign();
     list->AddChildren(first);
 
     while (lexer.currentToken().lexeme == ",") {
         lexer.next(); // ','
-        SyntaxerNode* next = ExprAssign();
+        std::shared_ptr<SyntaxerNode> next = ExprAssign();
         list->AddChildren(next);
     }
 
     return list;
 }
-SyntaxerNode* Syntaxer::For() {
+std::shared_ptr<SyntaxerNode> Syntaxer::For() {
     if (lexer.currentToken().lexeme != "for") {
         throw BuildError({"for"}, lexer.currentToken());
     }
 
-    SyntaxerNode* node = new SyntaxerNode();
+    std::shared_ptr<SyntaxerNode> node(new SyntaxerNode());
     node->UpdateLexeme("for");
     node->UpdateType(Token::Type::KwFor);
     node->UpdatePos(lexer.currentToken().pos);
@@ -2050,7 +2091,7 @@ SyntaxerNode* Syntaxer::For() {
     poliz.AddEl({POLIZ_Element::ALLOCATE,""});
     // --- Инициализация: [ CreateVariableOrArray | Expr ] ";" ---
     tids.back().push_back({TID()});
-    SyntaxerNode* init = nullptr;
+    std::shared_ptr<SyntaxerNode> init = nullptr;
     if (lexer.currentToken().lexeme != ";") {
         const std::string& lx = lexer.currentToken().lexeme;
         if (lx == "int" || lx == "double" || lx == "char" || lx == "bool") {
@@ -2068,7 +2109,7 @@ SyntaxerNode* Syntaxer::For() {
    
     // --- Условие: [ Expr ] ";" ---
     int ind_help1 = poliz.GiveSize();
-    SyntaxerNode* cond = nullptr;
+    std::shared_ptr<SyntaxerNode> cond = nullptr;
     if (lexer.currentToken().lexeme != ";") {
         cond = Expr();
     }
@@ -2093,7 +2134,7 @@ SyntaxerNode* Syntaxer::For() {
     // --- Шаг: [ Expr ] ---
 
     int ind_expr = poliz.GiveSize();
-    SyntaxerNode* step = nullptr;
+    std::shared_ptr<SyntaxerNode> step = nullptr;
     if (lexer.currentToken().lexeme != ")") {
         step = Expr();
     }
@@ -2113,7 +2154,7 @@ SyntaxerNode* Syntaxer::For() {
 
     int was = InCycle;
     InCycle = true;
-    SyntaxerNode* body = ProgramNoCreateFunction(false);
+    std::shared_ptr<SyntaxerNode> body = ProgramNoCreateFunction(false);
 
     tids.back().pop_back();
     

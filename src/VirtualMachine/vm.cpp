@@ -171,13 +171,13 @@ PolizVm::FuncLayout PolizVm::analyzeLayout(std::size_t storedAddr, TFuncElement 
     // Parameters: in this project scalars are stored by VALUE, arrays are stored as pointers.
     // Remember which parameter offsets are pointers so ADRESS_* can dereference only those.
     const auto& params = f.GiveParam();
-    for (auto* p : params) {
+    for (auto p : params) {
         const int off = p->GiveOffset();
         // Array parameters are represented by TIDElementArray<...>
-        if (dynamic_cast<TIDElementArray<int>*>(p) ||
-            dynamic_cast<TIDElementArray<double>*>(p) ||
-            dynamic_cast<TIDElementArray<bool>*>(p) ||
-            dynamic_cast<TIDElementArray<char>*>(p)) {
+        if (std::dynamic_pointer_cast<TIDElementArray<int>>(p) ||
+        std::dynamic_pointer_cast<TIDElementArray<double>>(p) ||
+        std::dynamic_pointer_cast<TIDElementArray<bool>>(p) ||
+        std::dynamic_pointer_cast<TIDElementArray<char>>(p)) {
             L.ptrParamOffsets.push_back((std::size_t)off);
         }
     }
@@ -208,15 +208,15 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
     std::size_t paramBytesNeed = 0;
     {
         const auto& params = f.GiveParam();
-        for (auto* p : params) {
+        for (auto p : params) {
             const int off = p->GiveOffset();
             if (off < 0) continue;
             std::size_t sz = sizeOf(p->GiveType());
             // Array parameters are stored as pointers (int) in the frame.
-            if (dynamic_cast<TIDElementArray<int>*>(p) ||
-                dynamic_cast<TIDElementArray<double>*>(p) ||
-                dynamic_cast<TIDElementArray<bool>*>(p) ||
-                dynamic_cast<TIDElementArray<char>*>(p)) {
+            if (std::dynamic_pointer_cast<TIDElementArray<int>>(p) ||
+            std::dynamic_pointer_cast<TIDElementArray<bool>>(p) ||
+            std::dynamic_pointer_cast<TIDElementArray<char>>(p) ||
+            std::dynamic_pointer_cast<TIDElementArray<double>>(p)) {
                 sz = sizeof(int);
             }
             paramBytesNeed = std::max(paramBytesNeed, (std::size_t)off + sz);
@@ -249,10 +249,10 @@ PolizVm::Value PolizVm::callFunction(std::size_t storedAddr, std::vector<Value> 
         int off = params[i]->GiveOffset();
         std::size_t slot = frames_.back().bp + (std::size_t)off;
 
-        const bool isPtrParam = (dynamic_cast<TIDElementArray<int>*>(params[i]) ||
-                                 dynamic_cast<TIDElementArray<double>*>(params[i]) ||
-                                 dynamic_cast<TIDElementArray<bool>*>(params[i]) ||
-                                 dynamic_cast<TIDElementArray<char>*>(params[i]));
+        const bool isPtrParam = (std::dynamic_pointer_cast<TIDElementArray<int>>(params[i]) ||
+                            std::dynamic_pointer_cast<TIDElementArray<double>>(params[i]) ||
+                            std::dynamic_pointer_cast<TIDElementArray<bool>>(params[i]) ||
+                            std::dynamic_pointer_cast<TIDElementArray<char>>(params[i]));
 
         if (isPtrParam) {
             // Expect an address (base of array). Store pointer as int.

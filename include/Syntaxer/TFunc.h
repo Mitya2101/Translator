@@ -8,21 +8,21 @@ std::string UpdateName(std::string name,std::vector<Types> param);
 class TFuncElement{
 private:
     std::string name_;
-    std::vector<TIDElement*> param_types_;
+    std::vector<std::shared_ptr<TIDElement>> param_types_;
     Types return_value_;
     int size_ = 0;
-    SyntaxerNode* create_;
+    std::shared_ptr<SyntaxerNode> create_;
     int poliz_index;
 public:
     std::string GiveName();
-    std::vector<TIDElement*> GiveParam();
+    std::vector<std::shared_ptr<TIDElement>> GiveParam();
     Types GiveReturnValue();
     int GiveArraySize();
-    SyntaxerNode* GiveCreate();
+    const std::shared_ptr<SyntaxerNode>& GiveCreate();
     int GivePolizIndex();
     TFuncElement(std::string name,
-        std::vector<TIDElement*> param_types,
-        Types return_value,SyntaxerNode* create_,int size,int poliz_index);
+        std::vector<std::shared_ptr<TIDElement>> param_types,
+        Types return_value,std::shared_ptr<SyntaxerNode> create_,int size,int poliz_index);
 };
 
 class TFunc{

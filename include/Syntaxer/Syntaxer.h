@@ -54,8 +54,8 @@ public:
 
     Lexer lexer;
     POLIZ poliz;
-    std::vector<std::vector<TID>> tids;
-    std::vector<std::pair<Types,int>> all;
+    std::vector<std::vector<TID>> stack_tids;
+    std::vector<std::pair<Types,int>> stack_calculate_simul;
     std::vector<std::vector<int>> helper_break;
     std::vector<std::vector<int>> continue_helper;
     std::vector<int> size_counter;
@@ -71,7 +71,7 @@ public:
 
 private:
     std::shared_ptr<SyntaxerNode> Program();
-    std::shared_ptr<SyntaxerNode> ProgramNoCreateFunction(bool need);
+    std::shared_ptr<SyntaxerNode> ProgramNoCreateFunction(bool need_create_tid);
 
     std::shared_ptr<SyntaxerNode> Statement();
     std::shared_ptr<SyntaxerNode> StatementNoCreationFunction();
@@ -113,5 +113,5 @@ private:
     std::shared_ptr<TIDElement> Give(std::string name);
 
 
-    int dfs(const std::shared_ptr<SyntaxerNode>& now);
+    int CompileTimeCalculation(const std::shared_ptr<SyntaxerNode>& now);
 };

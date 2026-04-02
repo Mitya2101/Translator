@@ -1,0 +1,6 @@
+int pref[10];
+pref[0] = 0;
+for(int i = 1;i < 10;i = i + 1){
+    pref[i] = pref[i - 1] + i;
+}
+print(pref[3] - pref[2]);

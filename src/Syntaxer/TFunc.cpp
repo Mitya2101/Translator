@@ -57,8 +57,8 @@ const std::shared_ptr<SyntaxerNode>& TFuncElement::GiveCreate(){
 
 
 bool TFunc::Find(std::string name){
-    for(int i =0 ;i < all_.size();i++){
-        if(all_[i].GiveName() == name){
+    for(int i =0 ;i < function_list_.size();i++){
+        if(function_list_[i].GiveName() == name){
             return true;
         }
     }
@@ -69,15 +69,15 @@ void TFunc::CreateFunc(TFuncElement a){
     if(Find(a.GiveName())){
         throw "Such function has already exists";
     }
-    all_.push_back(a);
+    function_list_.push_back(a);
 }
 
 
 TFuncElement TFunc::Get(int ind){
-    if(all_.size() <= ind){
+    if(function_list_.size() <= ind){
         throw "Get in TFunc";
     }
-    return all_[ind];
+    return function_list_[ind];
 }
 
 int TFuncElement::GiveArraySize(){
@@ -88,9 +88,9 @@ TFuncElement TFunc::Get(std::string name){
     if(!Find(name)){
         throw "Such function have not exists yet";
     }
-    for(int i =0 ;i < all_.size();i++){
-        if(all_[i].GiveName() == name){
-            return all_[i];
+    for(int i =0 ;i < function_list_.size();i++){
+        if(function_list_[i].GiveName() == name){
+            return function_list_[i];
         }
     }
     throw "Incorrect find";
@@ -98,5 +98,5 @@ TFuncElement TFunc::Get(std::string name){
 
 
 int TFunc::GiveSize(){
-    return all_.size();
+    return function_list_.size();
 }

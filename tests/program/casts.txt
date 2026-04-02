@@ -1,0 +1,9 @@
+int a = 5;
+double b = (double)a;
+print(b);
+bool r = (bool)1;
+a = (int)r;
+print(a);
+char c = 'a';
+a = (int)c;
+print(a);

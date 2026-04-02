@@ -27,7 +27,7 @@ public:
 
 class TFunc{
 private:
-    std::vector<TFuncElement> all_;
+    std::vector<TFuncElement> function_list_;
 public:
     void CreateFunc(TFuncElement a);
     bool Find(std::string name);

@@ -75,18 +75,18 @@ public:
 
 class TID{
 private:
-    std::vector<std::shared_ptr<TIDElement>> all_;
+    std::vector<std::shared_ptr<TIDElement>> tid_;
 public:
     void CreateVar(const std::shared_ptr<TIDElement>& a){   
         if(Find(a->GiveName())){
             throw "such element has already exists";
         }
-        all_.push_back(a);
+        tid_.push_back(a);
         
     }
     bool Find(std::string name){
-        for(int i =0 ;i < all_.size();i++){
-            if(all_[i]->GiveName() == name)return true;
+        for(int i =0 ;i < tid_.size();i++){
+            if(tid_[i]->GiveName() == name)return true;
         }
         return false;
     }
@@ -95,9 +95,9 @@ public:
         if(!Find(name)){
             throw "You try to get variable, which does not exists";
         }
-        for(int i = 0;i < all_.size();i++){
-            if(all_[i]->GiveName() == name){
-                return all_[i];
+        for(int i = 0;i < tid_.size();i++){
+            if(tid_[i]->GiveName() == name){
+                return tid_[i];
             }
         }
         throw "You try to get variable, which does not exists";

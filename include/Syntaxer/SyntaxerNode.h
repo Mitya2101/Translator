@@ -1,4 +1,5 @@
 #pragma once
+#include<memory>
 #include "lexer/lexer.h"
 #include<vector>
 
